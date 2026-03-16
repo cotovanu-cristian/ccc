@@ -10,6 +10,7 @@ type RuntimeHookHandler = (input: ClaudeHookInput) => Promise<HookResponse | voi
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const launcherRoot = dirname(dirname(__dirname));
+const tsconfigPath = join(launcherRoot, "tsconfig.json");
 
 const hooksMap = new Map<string, RuntimeHookHandler>();
 let currentInstanceId: string | undefined;
@@ -57,12 +58,13 @@ export const createHook = <E extends HookEventName>(options: CreateHookOptions<E
         process.env.DEBUG ? `DEBUG=${shQuote(process.env.DEBUG)}` : "",
         currentInstanceId ? `CCC_INSTANCE_ID=${shQuote(currentInstanceId)}` : "",
         currentConfigDirectory ? `CCC_CONFIG_DIR=${shQuote(currentConfigDirectory)}` : "",
+        `TSX_TSCONFIG_PATH=${shQuote(tsconfigPath)}`,
       ]
         .filter(Boolean)
         .join(" ");
 
       const prefix = envPrefix.length > 0 ? `${envPrefix} ` : "";
-      return `${prefix}bun ${shQuote(runnerPath)} hook ${hookId}`;
+      return `${prefix}tsx ${shQuote(runnerPath)} hook ${hookId}`;
     },
     timeout,
     once,
