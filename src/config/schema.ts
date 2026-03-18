@@ -415,6 +415,10 @@ export const settingsSchema = z.object({
           allowWrite: z.array(z.string()).optional(),
           denyWrite: z.array(z.string()).optional(),
           denyRead: z.array(z.string()).optional(),
+          // re-allow read access within denyRead regions (v2.1.77)
+          allowRead: z.array(z.string()).optional(),
+          // when true in managed settings, only managed allowRead paths apply (v2.1.77)
+          allowManagedReadPathsOnly: z.boolean().optional(),
         })
         .optional(),
       // selectively ignore sandbox violations by process/pattern (v2.1.61)

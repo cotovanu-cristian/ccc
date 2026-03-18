@@ -14,6 +14,7 @@ export type HookEventName =
   | "SessionStart"
   | "Setup"
   | "Stop"
+  | "StopFailure"
   | "SubagentStart"
   | "SubagentStop"
   | "TaskCompleted"
@@ -182,6 +183,23 @@ export interface StopHookInput extends BaseHookInput {
   last_assistant_message?: string;
 }
 
+export type StopFailureError =
+  | "authentication_failed"
+  | "billing_error"
+  | "invalid_request"
+  | "max_output_tokens"
+  | "rate_limit"
+  | "server_error"
+  | "unknown";
+
+// fires when a turn ends due to an API error; fire-and-forget (v2.1.78)
+export interface StopFailureHookInput extends BaseHookInput {
+  hook_event_name: "StopFailure";
+  error: StopFailureError;
+  error_details?: string;
+  last_assistant_message?: string;
+}
+
 export interface SubagentStopHookInput extends BaseHookInput {
   hook_event_name: "SubagentStop";
   stop_hook_active: boolean;
@@ -324,6 +342,7 @@ export type ClaudeHookInput =
   | SessionEndHookInput
   | SessionStartHookInput
   | SetupHookInput
+  | StopFailureHookInput
   | StopHookInput
   | SubagentStartHookInput
   | SubagentStopHookInput
@@ -403,6 +422,9 @@ export interface StopHookResponse extends BaseHookResponse {
   decision?: "block";
   reason?: string;
 }
+
+// fire-and-forget — hook output and exit codes are ignored (v2.1.78)
+export interface StopFailureHookResponse extends BaseHookResponse {}
 
 export interface SubagentStopHookResponse extends BaseHookResponse {
   decision?: "block";
@@ -486,6 +508,7 @@ export type HookResponse =
   | SessionEndHookResponse
   | SessionStartHookResponse
   | SetupHookResponse
+  | StopFailureHookResponse
   | StopHookResponse
   | SubagentStartHookResponse
   | SubagentStopHookResponse
@@ -531,6 +554,10 @@ export interface HookEventMap {
   Stop: {
     input: StopHookInput;
     response: StopHookResponse | void;
+  };
+  StopFailure: {
+    input: StopFailureHookInput;
+    response: StopFailureHookResponse | void;
   };
   SubagentStart: {
     input: SubagentStartHookInput;

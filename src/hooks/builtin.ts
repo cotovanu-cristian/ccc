@@ -25,6 +25,7 @@ const builtins: BuiltinCommands = {
   SessionStart: createHook({ event: "SessionStart", id: "builtin-recorder", handler: eventRecorder.record }),
   Setup: createHook({ event: "Setup", id: "builtin-recorder", handler: eventRecorder.record }),
   Stop: createHook({ event: "Stop", id: "builtin-recorder", handler: eventRecorder.record }),
+  StopFailure: createHook({ event: "StopFailure", id: "builtin-recorder", handler: eventRecorder.record }),
   SubagentStart: createHook({
     event: "SubagentStart",
     id: "builtin-recorder",
