@@ -6,6 +6,7 @@ import { log } from "@/utils/log";
 
 // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 type RuntimeHookHandler = (input: ClaudeHookInput) => Promise<HookResponse | void>;
+export type HookAgentScope = "all" | "main";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,6 +30,34 @@ const shQuote = (value: string): string => {
   return `'${value.replace(/'/g, `'\\''`)}'`;
 };
 
+const getHookCommandEnvPrefix = (): string => {
+  return [
+    process.env.DEBUG ? `DEBUG=${shQuote(process.env.DEBUG)}` : "",
+    currentInstanceId ? `CCC_INSTANCE_ID=${shQuote(currentInstanceId)}` : "",
+    currentConfigDirectory ? `CCC_CONFIG_DIR=${shQuote(currentConfigDirectory)}` : "",
+    `TSX_TSCONFIG_PATH=${shQuote(tsconfigPath)}`,
+  ]
+    .filter(Boolean)
+    .join(" ");
+};
+
+const getRunnerCommand = (hookId: string, scope: HookAgentScope): string => {
+  const runnerPath = getRunnerPath();
+  const envPrefix = getHookCommandEnvPrefix();
+  const prefix = envPrefix.length > 0 ? `${envPrefix} ` : "";
+  return `${prefix}tsx ${shQuote(runnerPath)} hook ${shQuote(hookId)} ${shQuote(scope)}`;
+};
+
+export const isSubagentLocalHookInput = (input: ClaudeHookInput): boolean => {
+  if (!input.agent_id) return false;
+  return input.hook_event_name !== "SubagentStart" && input.hook_event_name !== "SubagentStop";
+};
+
+const shouldSkipHookForScope = (scope: HookAgentScope, input: ClaudeHookInput): boolean => {
+  if (scope === "all") return false;
+  return isSubagentLocalHookInput(input);
+};
+
 export const setInstanceId = (instanceId: string, configDirectory = "config") => {
   const absoluteConfigDirectory = resolveConfigDirectoryPath(launcherRoot, configDirectory);
   currentInstanceId = instanceId;
@@ -40,31 +69,24 @@ export interface CreateHookOptions<E extends HookEventName> {
   event: E;
   id: string;
   handler: HookHandler<E>;
+  scope?: HookAgentScope;
   timeout?: number;
   once?: boolean;
 }
 
 export const createHook = <E extends HookEventName>(options: CreateHookOptions<E>): HookCommand => {
-  const { event, id, handler, timeout, once } = options;
+  const { event, id, handler, scope = "main", timeout, once } = options;
   const hookId = generateHookId(event, id);
 
-  hooksMap.set(hookId, handler as RuntimeHookHandler);
+  hooksMap.set(hookId, async (input) => {
+    if (shouldSkipHookForScope(scope, input)) return;
+    return (handler as RuntimeHookHandler)(input);
+  });
 
   return {
     type: "command",
     get command() {
-      const runnerPath = getRunnerPath();
-      const envPrefix = [
-        process.env.DEBUG ? `DEBUG=${shQuote(process.env.DEBUG)}` : "",
-        currentInstanceId ? `CCC_INSTANCE_ID=${shQuote(currentInstanceId)}` : "",
-        currentConfigDirectory ? `CCC_CONFIG_DIR=${shQuote(currentConfigDirectory)}` : "",
-        `TSX_TSCONFIG_PATH=${shQuote(tsconfigPath)}`,
-      ]
-        .filter(Boolean)
-        .join(" ");
-
-      const prefix = envPrefix.length > 0 ? `${envPrefix} ` : "";
-      return `${prefix}tsx ${shQuote(runnerPath)} hook ${hookId}`;
+      return getRunnerCommand(hookId, scope);
     },
     timeout,
     once,

@@ -2,8 +2,8 @@
 import { existsSync, readdirSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import { getHook } from "@/hooks/hook-generator";
 import { eventRecorder } from "@/hooks/event-recorder";
+import { getHook, type HookAgentScope, isSubagentLocalHookInput } from "@/hooks/hook-generator";
 import type { ClaudeHookInput } from "@/types/hooks";
 import type { MCPServers } from "@/types/mcps";
 import { buildPlugins } from "@/config/builders/build-plugins";
@@ -81,7 +81,7 @@ const loadCCCPlugins = async (context: Context) => {
   return loadResult.plugins;
 };
 
-const runHook = async (id: string) => {
+const runHook = async (id: string, scope: HookAgentScope = "main") => {
   const inputJson = await readStdin();
   if (!inputJson) {
     console.error("No input received on stdin");
@@ -105,6 +105,10 @@ const runHook = async (id: string) => {
   } catch (error) {
     console.error("Invalid hook input JSON:", error);
     process.exit(2);
+  }
+
+  if (scope === "main" && isSubagentLocalHookInput(input)) {
+    process.exit(0);
   }
 
   // Critical: bind hook runner to a stable instance id before loading plugins.
@@ -198,15 +202,18 @@ const runMCP = async (mcpName: string) => {
 const main = async () => {
   const mode = process.argv[2];
   const id = process.argv[3];
+  const scopeArg = process.argv[4];
 
   if (!mode || !id || (mode !== "hook" && mode !== "mcp")) {
-    console.error("Usage: runner.ts <hook|mcp> <id>");
+    console.error("Usage: runner.ts <hook|mcp> <id> [scope]");
     process.exit(2);
   }
 
+  const scope: HookAgentScope = scopeArg === "all" ? "all" : "main";
+
   try {
     if (mode === "hook") {
-      await runHook(id);
+      await runHook(id, scope);
     } else {
       await runMCP(id);
     }

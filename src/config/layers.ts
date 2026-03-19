@@ -4,8 +4,8 @@ import type { PromptLayerData } from "@/config/helpers";
 import type { Context } from "@/context/Context";
 import type { HookDefinition, HooksConfiguration } from "@/types/hooks";
 import type { MCPServers } from "@/types/mcps";
-import { formatConfigError } from "@/utils/errors";
 import { resolveConfigDirectoryPath } from "@/utils/config-directory";
+import { formatConfigError } from "@/utils/errors";
 import { log } from "@/utils/log";
 
 export const mergeMCPs = (...layers: (MCPServers | undefined)[]): MCPServers => {

@@ -97,7 +97,9 @@ export const settingsSchema = z.object({
       // additional working directories for Claude to access
       addDir: z.array(z.string()).optional(),
       // permission mode to start in: "default", "acceptEdits", "plan", "bypassPermissions"
-      permissionMode: z.enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"]).optional(),
+      permissionMode: z
+        .enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"])
+        .optional(),
       // enable verbose logging
       verbose: z.boolean().optional(),
       // enable debug mode with optional category filter (e.g., "api,hooks" or "!statsig")
@@ -314,11 +316,23 @@ export const settingsSchema = z.object({
     .optional(),
   // enterprise MCP server allowlist (v2.1.51)
   allowedMcpServers: z
-    .array(z.object({ serverName: z.string().optional(), serverCommand: z.string().optional(), serverUrl: z.string().optional() }))
+    .array(
+      z.object({
+        serverName: z.string().optional(),
+        serverCommand: z.string().optional(),
+        serverUrl: z.string().optional(),
+      }),
+    )
     .optional(),
   // enterprise MCP server denylist (v2.1.51)
   deniedMcpServers: z
-    .array(z.object({ serverName: z.string().optional(), serverCommand: z.string().optional(), serverUrl: z.string().optional() }))
+    .array(
+      z.object({
+        serverName: z.string().optional(),
+        serverCommand: z.string().optional(),
+        serverUrl: z.string().optional(),
+      }),
+    )
     .optional(),
   // when set in managed settings, only managed permission rules apply (v2.1.51)
   allowManagedPermissionRulesOnly: z.boolean().optional(),
@@ -371,14 +385,18 @@ export const settingsSchema = z.object({
       deny: z.array(z.string()).optional(),
       ask: z.array(z.string()).optional(),
       additionalDirectories: z.array(z.string()).optional(),
-      defaultMode: z.enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"]).optional(),
+      defaultMode: z
+        .enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"])
+        .optional(),
       disableBypassPermissionsMode: z.literal("disable").optional(),
       // disable auto mode (v2.1.71, managed settings)
       disableAutoMode: z.enum(["disable"]).optional(),
     })
     .optional(),
 
-  statusLine: z.object({ type: z.literal("command"), command: z.string(), padding: z.number().optional() }).optional(),
+  statusLine: z
+    .object({ type: z.literal("command"), command: z.string(), padding: z.number().optional() })
+    .optional(),
   fileSuggestion: z.object({ type: z.literal("command"), command: z.string() }).optional(),
 
   // git worktree configuration for --worktree flag (v2.1.49)

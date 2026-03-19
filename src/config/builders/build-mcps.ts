@@ -8,7 +8,7 @@ import { resolveConfigDirectoryPath } from "@/utils/config-directory";
 
 const buildRunnerEnv = (context: Context, extraEnv?: Record<string, string>): Record<string, string> => {
   const env: Record<string, string> = {
-    ...(extraEnv ?? {}),
+    ...extraEnv,
     CCC_INSTANCE_ID: context.instanceId,
     CCC_CONFIG_DIR: resolveConfigDirectoryPath(context.launcherDirectory, context.configDirectory),
   };

@@ -98,14 +98,14 @@ class EventRecorder {
       input,
       has_result: result !== undefined,
       ...(result !== undefined ? { result } : {}),
-      ...(error
-        ? {
-            error: {
-              message: error instanceof Error ? error.message : String(error),
-              ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
-            },
-          }
-        : {}),
+      ...(error ?
+        {
+          error: {
+            message: error instanceof Error ? error.message : String(error),
+            ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
+          },
+        }
+      : {}),
     };
 
     this._hookCalls.push(hookCall);

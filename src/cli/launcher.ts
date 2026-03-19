@@ -90,7 +90,9 @@ const resolveClaudeCli = async (launcherRoot: string): Promise<ResolveResult> =>
 const run = async () => {
   const incomingArgs = process.argv.slice(2);
   // only accept --debug=<value> form; bare --debug/-d always means "1"
-  const incomingDebugEqValue = incomingArgs.findLast((a) => a.startsWith("--debug="))?.slice("--debug=".length);
+  const incomingDebugEqValue = incomingArgs
+    .findLast((a) => a.startsWith("--debug="))
+    ?.slice("--debug=".length);
   const incomingDebugEnabled = hasLongFlag(incomingArgs, "--debug") || incomingArgs.includes("-d");
   if (!process.env.DEBUG && incomingDebugEnabled) {
     process.env.DEBUG = incomingDebugEqValue || "1";
