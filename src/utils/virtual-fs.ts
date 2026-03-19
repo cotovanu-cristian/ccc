@@ -38,6 +38,7 @@ type ReadDirOptions =
   | null;
 
 const VIRTUAL_PATHS = [
+  path.join(os.homedir(), ".claude.json"),
   path.join(os.homedir(), ".claude", "settings.json"),
   path.join(os.homedir(), ".claude", "CLAUDE.md"),
 ];
@@ -1756,6 +1757,7 @@ const monkeyPatchFS = ({
 
 export const setupVirtualFileSystem = (args: {
   settings: Record<string, unknown>;
+  claudeStateJson?: string;
   userPrompt: string;
   commands?: Map<string, string>;
   agents?: Map<string, string>;
@@ -1764,6 +1766,7 @@ export const setupVirtualFileSystem = (args: {
   workingDirectory?: string;
   disableParentClaudeMds?: boolean;
 }): void => {
+  const claudeStatePath = path.join(os.homedir(), ".claude.json");
   const settingsJsonPath = path.join(os.homedir(), ".claude", "settings.json");
   const claudeMdPath = path.join(os.homedir(), ".claude", "CLAUDE.md");
   const commandsPath = path.normalize(path.resolve(os.homedir(), ".claude", "commands"));
@@ -1772,6 +1775,14 @@ export const setupVirtualFileSystem = (args: {
   const rulesPath = path.normalize(path.resolve(os.homedir(), ".claude", "rules"));
 
   log.vfs("Initializing virtual filesystem");
+
+  if (args.claudeStateJson !== undefined) {
+    log.vfs("Injecting .claude.json:");
+    log.vfs(`  Path: ${claudeStatePath}`);
+    log.vfs(`  Length: ${args.claudeStateJson.length} chars`);
+  } else {
+    log.vfs("No virtual .claude.json override provided");
+  }
 
   // log settings
   log.vfs("Injecting settings.json:");
@@ -1857,6 +1868,7 @@ export const setupVirtualFileSystem = (args: {
   }
 
   const vol = Volume.fromJSON({
+    ...(args.claudeStateJson !== undefined && { [claudeStatePath]: args.claudeStateJson }),
     [settingsJsonPath]: JSON.stringify(filteredSettings, null, 2),
     [claudeMdPath]: args.userPrompt,
   });

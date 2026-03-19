@@ -21,6 +21,7 @@ import { getPluginInfo, loadCCCPluginsFromConfig } from "@/plugins";
 import { log } from "@/utils/log";
 import { createStartupLogger } from "@/utils/startup";
 import { setupVirtualFileSystem } from "@/utils/virtual-fs";
+import { buildTrustedClaudeState } from "@/utils/workspace-trust";
 
 type ResolveResult = { path: string; source: string };
 
@@ -123,6 +124,22 @@ const run = async () => {
   const ctxTask = startup.start("Resolve project context");
   const context = new Context(process.cwd());
   await context.init();
+
+  let virtualClaudeStateJson: string | undefined;
+  try {
+    const trustOverride = buildTrustedClaudeState([context.project.rootDirectory, context.workingDirectory]);
+    virtualClaudeStateJson = trustOverride.claudeStateJson;
+    log.info("LAUNCHER", `Prepared virtual Claude workspace trust from ${trustOverride.claudeStatePath}`);
+    for (const trustedPath of trustOverride.trustedPaths) {
+      log.debug("LAUNCHER", `  - ${trustedPath}`);
+    }
+  } catch (error) {
+    log.warn(
+      "LAUNCHER",
+      `Failed to prepare virtual Claude workspace trust: ${error instanceof Error ? error.message : error}`,
+    );
+  }
+
   setInstanceId(context.instanceId, context.configDirectory);
   process.env.CCC_INSTANCE_ID = context.instanceId;
 
@@ -446,6 +463,7 @@ const run = async () => {
   await startup.run("Mount VFS", async () => {
     setupVirtualFileSystem({
       settings: settingsWithPlugins as unknown as Record<string, unknown>,
+      claudeStateJson: virtualClaudeStateJson,
       userPrompt,
       commands,
       agents,
