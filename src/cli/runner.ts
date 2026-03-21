@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { existsSync, readdirSync } from "fs";
 import { dirname, join } from "path";
+import { StringDecoder } from "string_decoder";
 import { fileURLToPath, pathToFileURL } from "url";
 import { doesHookBatchEntryMatchInput } from "@/hooks/batching";
 import { eventRecorder } from "@/hooks/event-recorder";
@@ -68,9 +69,56 @@ const discover = (kind: "hooks" | "mcps"): string[] => {
 };
 
 const readStdin = async (): Promise<string> => {
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks).toString();
+  return new Promise((resolve, reject) => {
+    let inputJson = "";
+    let isSettled = false;
+    const decoder = new StringDecoder("utf8");
+
+    const cleanup = () => {
+      process.stdin.off("data", onData);
+      process.stdin.off("end", onEnd);
+      process.stdin.off("error", onError);
+      process.stdin.pause();
+    };
+
+    const resolveIfJsonComplete = () => {
+      if (!inputJson.trim()) return false;
+
+      try {
+        JSON.parse(inputJson);
+      } catch {
+        return false;
+      }
+
+      isSettled = true;
+      cleanup();
+      resolve(inputJson);
+      return true;
+    };
+
+    const onData = (chunk: Buffer | string) => {
+      inputJson += typeof chunk === "string" ? chunk : decoder.write(chunk);
+      resolveIfJsonComplete();
+    };
+
+    const onEnd = () => {
+      if (isSettled) return;
+      inputJson += decoder.end();
+      cleanup();
+      resolve(inputJson);
+    };
+
+    const onError = (error: Error) => {
+      if (isSettled) return;
+      cleanup();
+      reject(error);
+    };
+
+    process.stdin.on("data", onData);
+    process.stdin.on("end", onEnd);
+    process.stdin.on("error", onError);
+    process.stdin.resume();
+  });
 };
 
 const loadCCCPlugins = async (context: Context) => {

@@ -1,3 +1,5 @@
+import { spawn } from "node:child_process";
+import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import {
   createHook,
@@ -58,6 +60,27 @@ const createSubagentStopInput = (
   agent_type: "general-purpose",
   ...overrides,
 });
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const waitForExit = async (
+  child: ReturnType<typeof spawn>,
+  timeoutMs: number,
+): Promise<number | null> => {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      return child.exitCode;
+    }
+    await sleep(50);
+  }
+
+  throw new Error(`Process ${child.pid ?? "unknown"} did not exit within ${timeoutMs}ms`);
+};
+
+const runnerPath = join(process.cwd(), "src", "cli", "runner.ts");
+const configDir = join(process.cwd(), "dev-config");
 
 describe("hook generator scope", () => {
   test("createHook defaults to passing main scope to the runner", () => {
@@ -168,5 +191,110 @@ describe("hook generator scope", () => {
   test("subagent lifecycle inputs are not treated as subagent-local invocations", () => {
     expect(isSubagentLocalHookInput(createSubagentStartInput())).toBe(false);
     expect(isSubagentLocalHookInput(createSubagentStopInput())).toBe(false);
+  });
+
+  test("runner parses one hook payload without waiting for stdin EOF", async () => {
+    const payload = Buffer.from(
+      JSON.stringify([
+        {
+          hookId: "hook_PostToolUse_builtin-recorder",
+          matchers: ["*"],
+          scope: "main",
+          source: "builtin",
+        },
+      ]),
+      "utf8",
+    ).toString("base64url");
+
+    const child = spawn("bun", [runnerPath, "hook-batch", payload], {
+      env: {
+        ...process.env,
+        CCC_INSTANCE_ID: "runner-stdin-test",
+        CCC_CONFIG_DIR: configDir,
+      },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    let stderr = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    const input = {
+      ...baseInput,
+      hook_event_name: "PostToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "true", description: "test" },
+      tool_response: {
+        stdout: "",
+        stderr: "",
+        interrupted: false,
+        isImage: false,
+      },
+      tool_use_id: "tool-1",
+    };
+
+    child.stdin.write(JSON.stringify(input));
+
+    try {
+      const exitCode = await waitForExit(child, 5000);
+      expect(exitCode).toBe(0);
+      expect(stderr).toBe("");
+    } finally {
+      child.stdin.destroy();
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+        await waitForExit(child, 5000);
+      }
+    }
+  });
+
+  test("runner preserves split utf-8 characters across stdin chunks", async () => {
+    const child = spawn("bun", [runnerPath, "hook", "hook_PreToolUse_loopy-sleep-exit", "main"], {
+      env: {
+        ...process.env,
+        CCC_INSTANCE_ID: "runner-utf8-test",
+        CCC_CONFIG_DIR: configDir,
+      },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    let stderr = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    const marker = "€";
+    const input = {
+      ...baseInput,
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: {
+        command: "echo ok",
+        description: `split-${marker}-char`,
+      },
+      tool_use_id: "tool-utf8",
+    };
+
+    const inputBuffer = Buffer.from(JSON.stringify(input), "utf8");
+    const markerIndex = inputBuffer.indexOf(Buffer.from(marker, "utf8"));
+    expect(markerIndex).toBeGreaterThanOrEqual(0);
+
+    const splitIndex = markerIndex + 1;
+    child.stdin.write(inputBuffer.subarray(0, splitIndex));
+    await sleep(10);
+    child.stdin.write(inputBuffer.subarray(splitIndex));
+
+    try {
+      const exitCode = await waitForExit(child, 5000);
+      expect(exitCode).toBe(0);
+      expect(stderr).toContain(`desc: split-${marker}-char`);
+    } finally {
+      child.stdin.destroy();
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+        await waitForExit(child, 5000);
+      }
+    }
   });
 });
