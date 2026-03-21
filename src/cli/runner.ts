@@ -1,9 +1,15 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env bun
 import { existsSync, readdirSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
+import { doesHookBatchEntryMatchInput } from "@/hooks/batching";
 import { eventRecorder } from "@/hooks/event-recorder";
-import { getHook, type HookAgentScope, isSubagentLocalHookInput } from "@/hooks/hook-generator";
+import {
+  getHook,
+  type HookAgentScope,
+  type HookBatchCommandEntry,
+  isSubagentLocalHookInput,
+} from "@/hooks/hook-generator";
 import type { ClaudeHookInput } from "@/types/hooks";
 import type { MCPServers } from "@/types/mcps";
 import { buildPlugins } from "@/config/builders/build-plugins";
@@ -81,14 +87,13 @@ const loadCCCPlugins = async (context: Context) => {
   return loadResult.plugins;
 };
 
-const runHook = async (id: string, scope: HookAgentScope = "main") => {
+const readHookInput = async (): Promise<ClaudeHookInput> => {
   const inputJson = await readStdin();
   if (!inputJson) {
     console.error("No input received on stdin");
     process.exit(2);
   }
 
-  let input: ClaudeHookInput;
   try {
     const parsed: unknown = JSON.parse(inputJson);
     if (
@@ -101,27 +106,39 @@ const runHook = async (id: string, scope: HookAgentScope = "main") => {
       console.error("Invalid hook input shape:", parsed);
       process.exit(2);
     }
-    input = parsed as ClaudeHookInput;
+    return parsed as ClaudeHookInput;
   } catch (error) {
     console.error("Invalid hook input JSON:", error);
     process.exit(2);
   }
+};
 
-  if (scope === "main" && isSubagentLocalHookInput(input)) {
-    process.exit(0);
-  }
-
+const bindHookInstanceId = (input: ClaudeHookInput) => {
   // Critical: bind hook runner to a stable instance id before loading plugins.
   // Prefer launcher-provided CCC_INSTANCE_ID (passed via hook command env).
   // Fallback to hook input session_id only when env is absent.
   if (!process.env.CCC_INSTANCE_ID && typeof input.session_id === "string" && input.session_id.length > 0) {
     process.env.CCC_INSTANCE_ID = input.session_id;
   }
+};
 
-  // import all hooks configs to register handlers
-  for (const href of discover("hooks")) await import(href);
+const loadHookRuntime = async (
+  input: ClaudeHookInput,
+  options: {
+    loadConfigHooks: boolean;
+    loadPlugins: boolean;
+  },
+) => {
+  if (options.loadConfigHooks) {
+    for (const href of discover("hooks")) {
+      await import(href);
+    }
+  }
 
-  // also load CCC plugin hooks
+  if (!options.loadPlugins) {
+    return;
+  }
+
   const contextCwd = typeof input.cwd === "string" && input.cwd.length > 0 ? input.cwd : process.cwd();
   const context = new Context(contextCwd);
   await context.init();
@@ -134,6 +151,59 @@ const runHook = async (id: string, scope: HookAgentScope = "main") => {
       plugin.definition.hooks(plugin.context);
     }
   }
+};
+
+const decodeBatchEntries = (payload: string): HookBatchCommandEntry[] => {
+  try {
+    const decoded = Buffer.from(payload, "base64url").toString("utf8");
+    const parsed: unknown = JSON.parse(decoded);
+    if (!Array.isArray(parsed)) {
+      throw new TypeError("Batch payload must be an array");
+    }
+
+    return parsed.map((entry) => {
+      if (
+        typeof entry !== "object" ||
+        entry === null ||
+        !("hookId" in entry) ||
+        typeof entry.hookId !== "string" ||
+        !("scope" in entry) ||
+        (entry.scope !== "all" && entry.scope !== "main") ||
+        !("source" in entry) ||
+        (entry.source !== "builtin" && entry.source !== "config" && entry.source !== "plugin")
+      ) {
+        throw new Error("Invalid batch hook entry");
+      }
+
+      const matchers =
+        "matchers" in entry && Array.isArray(entry.matchers) ?
+          entry.matchers.filter((matcher: unknown): matcher is string => typeof matcher === "string")
+        : [];
+
+      return {
+        hookId: entry.hookId,
+        matchers,
+        scope: entry.scope,
+        source: entry.source,
+      };
+    });
+  } catch (error) {
+    console.error("Invalid hook batch payload:", error);
+    process.exit(2);
+  }
+};
+
+const runHook = async (id: string, scope: HookAgentScope = "main") => {
+  const input = await readHookInput();
+  if (scope === "main" && isSubagentLocalHookInput(input)) {
+    process.exit(0);
+  }
+
+  bindHookInstanceId(input);
+  await loadHookRuntime(input, {
+    loadConfigHooks: true,
+    loadPlugins: true,
+  });
 
   const fn = getHook(id);
   if (!fn) {
@@ -153,6 +223,62 @@ const runHook = async (id: string, scope: HookAgentScope = "main") => {
     eventRecorder.recordHookCall(id, input, undefined, error);
     throw error;
   }
+};
+
+const runHookBatch = async (payload: string) => {
+  const input = await readHookInput();
+  const entries = decodeBatchEntries(payload);
+  const matchingEntries = entries.filter((entry) => doesHookBatchEntryMatchInput(entry, input));
+
+  if (matchingEntries.length === 0) {
+    process.exit(0);
+  }
+
+  bindHookInstanceId(input);
+
+  await loadHookRuntime(input, {
+    loadConfigHooks: matchingEntries.some((entry) => entry.source === "config"),
+    loadPlugins: matchingEntries.some((entry) => entry.source === "plugin"),
+  });
+
+  const settled = await Promise.allSettled(
+    matchingEntries.map(async (entry) => {
+      const fn = getHook(entry.hookId);
+      if (!fn) {
+        throw new Error(`Hook not found: ${entry.hookId}`);
+      }
+
+      const result = await Promise.resolve(fn(input));
+      if (result !== undefined) {
+        throw new Error(`Batchable hook ${entry.hookId} returned hook output`);
+      }
+
+      return { entry };
+    }),
+  );
+  const errors: string[] = [];
+
+  for (const [index, entry] of matchingEntries.entries()) {
+    const result = settled[index];
+
+    if (!entry || !result) continue;
+
+    if (result.status === "fulfilled") {
+      eventRecorder.recordHookCall(entry.hookId, input);
+      continue;
+    }
+
+    eventRecorder.recordHookCall(entry.hookId, input, undefined, result.reason);
+    errors.push(
+      `${entry.hookId}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
+    );
+  }
+
+  if (errors.length > 0) {
+    throw new Error(errors.join("\n"));
+  }
+
+  process.exit(0);
 };
 
 const runMCP = async (mcpName: string) => {
@@ -204,8 +330,8 @@ const main = async () => {
   const id = process.argv[3];
   const scopeArg = process.argv[4];
 
-  if (!mode || !id || (mode !== "hook" && mode !== "mcp")) {
-    console.error("Usage: runner.ts <hook|mcp> <id> [scope]");
+  if (!mode || !id || (mode !== "hook" && mode !== "hook-batch" && mode !== "mcp")) {
+    console.error("Usage: runner.ts <hook|hook-batch|mcp> <id> [scope]");
     process.exit(2);
   }
 
@@ -214,6 +340,8 @@ const main = async () => {
   try {
     if (mode === "hook") {
       await runHook(id, scope);
+    } else if (mode === "hook-batch") {
+      await runHookBatch(id);
     } else {
       await runMCP(id);
     }

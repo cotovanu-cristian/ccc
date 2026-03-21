@@ -34,6 +34,8 @@ export interface SkillDefinition {
   isolation?: "worktree";
   /** Always run as a background task (v2.1.49). */
   background?: boolean;
+  /** Override effort level when this skill is invoked (v2.1.80). */
+  effort?: "high" | "low" | "max" | "medium";
   /** Hook definitions scoped to this skill. */
   hooks?: HooksConfiguration | Record<string, unknown>;
   /**

@@ -37,6 +37,8 @@ bun add -g tsx
 
 **Note**: Claude Code (`@anthropic-ai/claude-code`) is included as a dependency.
 \
+Bun must also be available on `PATH` at runtime because CCC launches hook and statusline helpers with `bun`.
+\
 To update it to the latest version do a `bun update`.
 
 ### 2. Customize your config
@@ -460,7 +462,7 @@ const oneTimeHook = createHook({
     // this will only run once per session
     console.log("First session start only");
   },
-  timeout: 5000,  // optional: timeout in ms
+  timeout: 5,     // optional: timeout in seconds
   once: true,     // optional: run only first time per session
 });
 ```

@@ -70,7 +70,9 @@ describe("hook generator scope", () => {
     });
 
     expect(hook.command.startsWith("sh -c ")).toBe(false);
-    expect(hook.command).toContain("tsx ");
+    expect(hook.command).toContain("bun ");
+    expect(hook.command).toContain("CCC_INSTANCE_ID=");
+    expect(hook.command).toContain("CCC_CONFIG_DIR=");
     expect(hook.command).toContain("hook_PreToolUse_default-main-command");
     expect(hook.command).toContain("main");
   });
@@ -84,7 +86,7 @@ describe("hook generator scope", () => {
     });
 
     expect(hook.command.startsWith("sh -c ")).toBe(false);
-    expect(hook.command).toContain("tsx ");
+    expect(hook.command).toContain("bun ");
     expect(hook.command).toContain("all");
   });
 

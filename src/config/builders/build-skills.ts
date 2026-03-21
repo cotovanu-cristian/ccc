@@ -140,6 +140,7 @@ const normalizeSkillDefinition = (definition: SkillDefinition, skillName: string
     "context",
     "description",
     "disable-model-invocation",
+    "effort",
     "hooks",
     "model",
     "name",
@@ -169,6 +170,9 @@ const normalizeSkillDefinition = (definition: SkillDefinition, skillName: string
   }
   if (definition.hooks !== undefined) {
     frontmatter.hooks = definition.hooks;
+  }
+  if (definition.effort) {
+    frontmatter.effort = definition.effort;
   }
 
   if (definition.frontmatter) {

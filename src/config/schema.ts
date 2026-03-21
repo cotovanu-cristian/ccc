@@ -5,7 +5,7 @@ export const agentDefinitionSchema = z.object({
   prompt: z.string(),
   tools: z.array(z.string()).optional(),
   disallowedTools: z.array(z.string()).optional(),
-  model: z.enum(["sonnet", "opus", "haiku", "inherit"]).optional(),
+  model: z.string().optional(),
   skills: z.array(z.string()).optional(),
   mcpServers: z.array(z.union([z.string(), z.record(z.string(), z.unknown())])).optional(),
   maxTurns: z.number().optional(),
@@ -41,12 +41,14 @@ const marketplaceSourceSchema = z.discriminatedUnion("source", [
   z.object({
     source: z.literal("npm"),
     package: z.string(),
+    version: z.string().optional(),
+    registry: z.url().optional(),
   }),
   z.object({
     source: z.literal("pip"),
     package: z.string(),
     version: z.string().optional(),
-    registry: z.string().optional(),
+    registry: z.url().optional(),
   }),
   z.object({
     source: z.literal("file"),
@@ -60,18 +62,23 @@ const marketplaceSourceSchema = z.discriminatedUnion("source", [
     source: z.literal("hostPattern"),
     hostPattern: z.string(),
   }),
-  // subdirectory within a git repo (v2.1.69)
   z.object({
     source: z.literal("git-subdir"),
     url: z.string(),
     path: z.string(),
     ref: z.string().optional(),
-    sha: z.string().optional(),
   }),
   // regex path pattern matching for strict marketplace allowlists (v2.1.69)
   z.object({
     source: z.literal("pathPattern"),
     pathPattern: z.string(),
+  }),
+  // inline marketplace manifest defined directly in settings.json (v2.1.80)
+  z.object({
+    source: z.literal("settings"),
+    name: z.string(),
+    plugins: z.array(z.record(z.string(), z.unknown())),
+    owner: z.record(z.string(), z.unknown()).optional(),
   }),
 ]);
 
@@ -188,6 +195,10 @@ export const settingsSchema = z.object({
       tmux: z.union([z.boolean(), z.string()]).optional(),
       // thinking mode: enabled (= adaptive), adaptive, disabled (v2.1.61)
       thinking: z.enum(["enabled", "adaptive", "disabled"]).optional(),
+      // MCP servers whose channel notifications should register this session (v2.1.80)
+      channels: z.array(z.string()).optional(),
+      // load channel servers not on the approved allowlist; for local development only (v2.1.80)
+      dangerouslyLoadDevelopmentChannels: z.array(z.string()).optional(),
     })
     .optional(),
 
@@ -235,6 +246,8 @@ export const settingsSchema = z.object({
 
   apiKeyHelper: z.string().optional(),
   awsAuthRefresh: z.string().optional(),
+  // command to refresh GCP authentication
+  gcpAuthRefresh: z.string().optional(),
   // script outputting JSON with AWS credentials
   awsCredentialExport: z.string().optional(),
   cleanupPeriodDays: z.number().optional(),
@@ -319,7 +332,7 @@ export const settingsSchema = z.object({
     .array(
       z.object({
         serverName: z.string().optional(),
-        serverCommand: z.string().optional(),
+        serverCommand: z.array(z.string()).min(1).optional(),
         serverUrl: z.string().optional(),
       }),
     )
@@ -329,7 +342,7 @@ export const settingsSchema = z.object({
     .array(
       z.object({
         serverName: z.string().optional(),
-        serverCommand: z.string().optional(),
+        serverCommand: z.array(z.string()).min(1).optional(),
         serverUrl: z.string().optional(),
       }),
     )
@@ -370,11 +383,15 @@ export const settingsSchema = z.object({
   pluginTrustMessage: z.string().optional(),
   // whether user has accepted auto mode opt-in dialog (v2.1.71)
   skipAutoPermissionPrompt: z.boolean().optional(),
+  // disable auto mode at top level (v2.1.71, managed settings)
+  disableAutoMode: z.enum(["disable"]).optional(),
+  // default transcript view: chat or transcript
+  defaultView: z.enum(["chat", "transcript"]).optional(),
   // auto mode classifier rules (v2.1.71)
   autoMode: z
     .object({
       allow: z.array(z.string()).optional(),
-      deny: z.array(z.string()).optional(),
+      soft_deny: z.array(z.string()).optional(),
       environment: z.array(z.string()).optional(),
     })
     .optional(),

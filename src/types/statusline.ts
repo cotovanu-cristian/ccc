@@ -1,5 +1,4 @@
 export type StatusLineInput = {
-  hook_event_name: string;
   session_id: string;
   // human-readable session name set via /rename (optional)
   session_name?: string;
@@ -40,13 +39,38 @@ export type StatusLineInput = {
     used_percentage: number | null;
     remaining_percentage: number | null;
   };
+  // claude.ai subscription usage limits; only present for subscribers after first API response (v2.1.80)
+  rate_limits?: {
+    five_hour?: {
+      used_percentage: number;
+      resets_at: number;
+    };
+    seven_day?: {
+      used_percentage: number;
+      resets_at: number;
+    };
+  };
   exceeds_200k_tokens: boolean;
   // only present when vim mode is enabled
   vim?: {
     mode: "INSERT" | "NORMAL";
   };
+  // main thread agent type name (from --agent flag or agent type)
+  agent_type?: string;
   // only present when started with --agent flag
   agent?: {
     name: string;
+  };
+  // only present in remote mode
+  remote?: {
+    session_id: string;
+  };
+  // only present when running in a git worktree
+  worktree?: {
+    name: string;
+    path: string;
+    branch: string;
+    original_cwd: string;
+    original_branch: string;
   };
 };

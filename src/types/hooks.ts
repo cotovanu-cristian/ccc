@@ -25,6 +25,7 @@ export type HookEventName =
 
 export type HookMatcherType =
   | ({} & string)
+  | "Agent"
   | "AskUserQuestion"
   | "auto"
   | "Bash"
@@ -47,6 +48,7 @@ export type HookMatcherType =
   | "NotebookRead"
   | "Read"
   | "resume"
+  | "SendMessage"
   | "Skill"
   | "startup"
   | "Task"
@@ -127,7 +129,7 @@ interface BaseHookInput {
   session_id: string;
   transcript_path: string;
   cwd: string;
-  permission_mode: PermissionMode;
+  permission_mode?: PermissionMode;
   // present when hook fires from within a subagent (v2.1.64)
   agent_id?: string;
   // present when hook fires from subagent or main thread of --agent session (v2.1.64)
@@ -173,7 +175,7 @@ export interface SessionStartHookInput extends BaseHookInput {
 
 export interface SessionEndHookInput extends BaseHookInput {
   hook_event_name: "SessionEnd";
-  reason: "bypass_permissions_disabled" | "clear" | "logout" | "other" | "prompt_input_exit";
+  reason: "bypass_permissions_disabled" | "clear" | "logout" | "other" | "prompt_input_exit" | "resume";
 }
 
 export interface StopHookInput extends BaseHookInput {
@@ -283,7 +285,12 @@ export interface WorktreeRemoveHookInput extends BaseHookInput {
 
 export type InstructionsMemoryType = "Local" | "Managed" | "Project" | "User";
 
-export type InstructionsLoadReason = "include" | "nested_traversal" | "path_glob_match" | "session_start";
+export type InstructionsLoadReason =
+  | "compact"
+  | "include"
+  | "nested_traversal"
+  | "path_glob_match"
+  | "session_start";
 
 export interface InstructionsLoadedHookInput extends BaseHookInput {
   hook_event_name: "InstructionsLoaded";

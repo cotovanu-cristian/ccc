@@ -9,10 +9,6 @@ export default createStatusline(async (data) => {
     components.push(`${modelIcon} ${data.model.display_name}`);
   }
 
-  if (data.hook_event_name) {
-    components.push(`⚡ ${data.hook_event_name}`);
-  }
-
   console.log(components.join(" │ "));
   process.exit(0);
 });
