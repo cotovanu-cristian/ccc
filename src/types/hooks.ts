@@ -29,6 +29,7 @@ export type HookMatcherType =
   | "AskUserQuestion"
   | "auto"
   | "Bash"
+  | "PowerShell"
   | "clear"
   | "compact"
   | "CronCreate"
@@ -67,6 +68,8 @@ export type HookMatcherType =
 export interface HookCommand {
   type: "command";
   command: string;
+  // shell interpreter: 'bash' uses $SHELL, 'powershell' uses pwsh (v2.1.81)
+  shell?: "bash" | "powershell";
   timeout?: number;
   once?: boolean;
   // custom spinner status message while hook runs (v2.1.63)

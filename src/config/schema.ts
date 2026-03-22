@@ -387,6 +387,16 @@ export const settingsSchema = z.object({
   disableAutoMode: z.enum(["disable"]).optional(),
   // default transcript view: chat or transcript
   defaultView: z.enum(["chat", "transcript"]).optional(),
+  // show "clear context" option in plan approval dialog (v2.1.81, default false)
+  showClearContextOnPlanAccept: z.boolean().optional(),
+  // enable background memory consolidation (auto-dream) (v2.1.81)
+  autoDreamEnabled: z.boolean().optional(),
+  // block non-plugin customization sources for listed surfaces (v2.1.81, managed settings)
+  strictPluginOnlyCustomization: z
+    .union([z.boolean(), z.array(z.enum(["skills", "agents", "hooks", "mcp"]))])
+    .optional(),
+  // opt-in for channel notifications from MCP servers (v2.1.81, managed settings)
+  channelsEnabled: z.boolean().optional(),
   // auto mode classifier rules (v2.1.71)
   autoMode: z
     .object({
