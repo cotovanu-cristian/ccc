@@ -1287,31 +1287,39 @@ const monkeyPatchFS = ({
   ]);
 
   for (const method of allFsMethods) {
-    const original = (fsDefault as Record<string, unknown>)[method];
-    if (typeof original === "function" && !alreadyPatched.has(method)) {
-      (fsDefault as Record<string, unknown>)[method] = function (this: typeof fsDefault, ...args: unknown[]) {
-        if (
-          method.toLowerCase().includes("dir") ||
-          method.toLowerCase().includes("read") ||
-          method.toLowerCase().includes("scan") ||
-          method.toLowerCase().includes("walk") ||
-          method.toLowerCase().includes("glob") ||
-          method.toLowerCase().includes("list")
-        ) {
-          log.vfs(`Unpatched fs.${method}() called!`);
-          if (args[0] && typeof args[0] === "string" && args[0].includes(".claude")) {
-            log.vfs(`fs.${method}("${args[0]}") on .claude path!`);
-          }
-          if (method === "readSync" && typeof args[0] === "number") {
-            log.vfs(`fs.readSync(fd=${args[0]}, buffer, ...) - low-level read on file descriptor`);
-          }
-        }
-        if (args[0] && typeof args[0] === "string" && args[0].includes(".claude/commands")) {
-          log.vfs(`fs.${method}("${args[0]}") called on commands path`);
-        }
-        return original.apply(this, args);
-      };
+    if (alreadyPatched.has(method)) continue;
+
+    const descriptor = Object.getOwnPropertyDescriptor(fsDefault, method);
+    if (!descriptor || !("value" in descriptor) || !descriptor.writable) {
+      if (descriptor?.get && !descriptor.set) log.vfs(`Skipping accessor-only fs.${method} during monkey patch`);
+      continue;
     }
+
+    const original = descriptor.value;
+    if (typeof original !== "function") continue;
+
+    (fsDefault as Record<string, unknown>)[method] = function (this: typeof fsDefault, ...args: unknown[]) {
+      if (
+        method.toLowerCase().includes("dir") ||
+        method.toLowerCase().includes("read") ||
+        method.toLowerCase().includes("scan") ||
+        method.toLowerCase().includes("walk") ||
+        method.toLowerCase().includes("glob") ||
+        method.toLowerCase().includes("list")
+      ) {
+        log.vfs(`Unpatched fs.${method}() called!`);
+        if (args[0] && typeof args[0] === "string" && args[0].includes(".claude")) {
+          log.vfs(`fs.${method}("${args[0]}") on .claude path!`);
+        }
+        if (method === "readSync" && typeof args[0] === "number") {
+          log.vfs(`fs.readSync(fd=${args[0]}, buffer, ...) - low-level read on file descriptor`);
+        }
+      }
+      if (args[0] && typeof args[0] === "string" && args[0].includes(".claude/commands")) {
+        log.vfs(`fs.${method}("${args[0]}") called on commands path`);
+      }
+      return original.apply(this, args);
+    };
   }
 
   if (fsDefault.openSync) {
