@@ -1,7 +1,9 @@
 export type HookEventName =
   | "ConfigChange"
+  | "CwdChanged"
   | "Elicitation"
   | "ElicitationResult"
+  | "FileChanged"
   | "InstructionsLoaded"
   | "Notification"
   | "PermissionRequest"
@@ -286,6 +288,19 @@ export interface WorktreeRemoveHookInput extends BaseHookInput {
   worktree_path: string;
 }
 
+// reactive environment management hooks (v2.1.83)
+export interface CwdChangedHookInput extends BaseHookInput {
+  hook_event_name: "CwdChanged";
+  old_cwd: string;
+  new_cwd: string;
+}
+
+export interface FileChangedHookInput extends BaseHookInput {
+  hook_event_name: "FileChanged";
+  file_path: string;
+  event: "add" | "change" | "unlink";
+}
+
 export type InstructionsMemoryType = "Local" | "Managed" | "Project" | "User";
 
 export type InstructionsLoadReason =
@@ -339,8 +354,10 @@ export interface PostToolUseFailureHookInput extends BaseHookInput {
 
 export type ClaudeHookInput =
   | ConfigChangeHookInput
+  | CwdChangedHookInput
   | ElicitationHookInput
   | ElicitationResultHookInput
+  | FileChangedHookInput
   | InstructionsLoadedHookInput
   | NotificationHookInput
   | PermissionRequestHookInput
@@ -425,6 +442,9 @@ export interface SessionStartHookResponse extends BaseHookResponse {
   hookSpecificOutput?: {
     hookEventName: "SessionStart";
     additionalContext?: string;
+    initialUserMessage?: string;
+    // absolute paths to watch for FileChanged hooks (v2.1.83)
+    watchPaths?: string[];
   };
 }
 
@@ -487,6 +507,22 @@ export interface WorktreeRemoveHookResponse extends BaseHookResponse {}
 
 export interface InstructionsLoadedHookResponse extends BaseHookResponse {}
 
+export interface CwdChangedHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "CwdChanged";
+    // absolute paths to watch for FileChanged hooks (v2.1.83)
+    watchPaths?: string[];
+  };
+}
+
+export interface FileChangedHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "FileChanged";
+    // absolute paths to watch for FileChanged hooks (v2.1.83)
+    watchPaths?: string[];
+  };
+}
+
 export interface ElicitationHookResponse extends BaseHookResponse {
   hookSpecificOutput?: {
     hookEventName: "Elicitation";
@@ -505,8 +541,10 @@ export interface ElicitationResultHookResponse extends BaseHookResponse {
 
 export type HookResponse =
   | ConfigChangeHookResponse
+  | CwdChangedHookResponse
   | ElicitationHookResponse
   | ElicitationResultHookResponse
+  | FileChangedHookResponse
   | InstructionsLoadedHookResponse
   | NotificationHookResponse
   | PermissionRequestHookResponse
@@ -600,6 +638,14 @@ export interface HookEventMap {
   ConfigChange: {
     input: ConfigChangeHookInput;
     response: ConfigChangeHookResponse | void;
+  };
+  CwdChanged: {
+    input: CwdChangedHookInput;
+    response: CwdChangedHookResponse | void;
+  };
+  FileChanged: {
+    input: FileChangedHookInput;
+    response: FileChangedHookResponse | void;
   };
   WorktreeCreate: {
     input: WorktreeCreateHookInput;

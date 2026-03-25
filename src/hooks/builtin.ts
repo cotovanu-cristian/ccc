@@ -11,6 +11,18 @@ const builtins: BuiltinCommands = {
     batchable: true,
     handler: eventRecorder.record,
   }),
+  CwdChanged: createHook({
+    event: "CwdChanged",
+    id: "builtin-recorder",
+    batchable: true,
+    handler: eventRecorder.record,
+  }),
+  FileChanged: createHook({
+    event: "FileChanged",
+    id: "builtin-recorder",
+    batchable: true,
+    handler: eventRecorder.record,
+  }),
   Notification: createHook({
     event: "Notification",
     id: "builtin-recorder",

@@ -11,6 +11,8 @@ export const agentDefinitionSchema = z.object({
   maxTurns: z.number().optional(),
   // critical reminder added to system prompt (v2.1.64)
   criticalSystemReminder_EXPERIMENTAL: z.string().optional(),
+  // auto-submitted as the first user turn when this agent is the main thread agent (v2.1.83)
+  initialPrompt: z.string().optional(),
 });
 
 export type AgentDefinition = z.infer<typeof agentDefinitionSchema>;
@@ -397,6 +399,8 @@ export const settingsSchema = z.object({
     .optional(),
   // opt-in for channel notifications from MCP servers (v2.1.81, managed settings)
   channelsEnabled: z.boolean().optional(),
+  // prevent claude-cli:// protocol handler registration (v2.1.83)
+  disableDeepLinkRegistration: z.enum(["disable"]).optional(),
   // auto mode classifier rules (v2.1.71)
   autoMode: z
     .object({
@@ -473,6 +477,8 @@ export const settingsSchema = z.object({
       enableWeakerNestedSandbox: z.boolean().optional(),
       // weaker network isolation for sandbox (v2.1.64)
       enableWeakerNetworkIsolation: z.boolean().optional(),
+      // exit with error when sandbox is enabled but cannot start (v2.1.83)
+      failIfUnavailable: z.boolean().optional(),
     })
     .optional(),
 
