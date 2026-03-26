@@ -388,8 +388,10 @@ const monkeyPatchFS = ({
     if ((typeof filePath === "string" || Buffer.isBuffer(filePath)) && vol.existsSync(filePath)) return true;
     return Reflect.apply(origExistsSync, this, [filePath]) as boolean;
   };
-  // @ts-expect-error
-  fsDefault.statSync = function (filePath: PathLike, options?: StatSyncOptions) {
+  (fsDefault as { -readonly [K in keyof typeof fsDefault]: (typeof fsDefault)[K] }).statSync = function (
+    filePath: PathLike,
+    options?: StatSyncOptions,
+  ) {
     if (typeof filePath === "string" && filePath.includes(".claude/commands")) {
       log.vfs(`statSync("${filePath}") called`);
     }

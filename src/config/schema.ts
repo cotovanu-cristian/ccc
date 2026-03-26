@@ -399,6 +399,10 @@ export const settingsSchema = z.object({
     .optional(),
   // opt-in for channel notifications from MCP servers (v2.1.81, managed settings)
   channelsEnabled: z.boolean().optional(),
+  // admin-defined allowlist of channel plugins (v2.1.84, managed settings)
+  allowedChannelPlugins: z
+    .array(z.object({ marketplace: z.string(), plugin: z.string() }))
+    .optional(),
   // prevent claude-cli:// protocol handler registration (v2.1.83)
   disableDeepLinkRegistration: z.enum(["disable"]).optional(),
   // auto mode classifier rules (v2.1.71)

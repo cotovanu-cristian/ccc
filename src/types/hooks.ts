@@ -20,6 +20,7 @@ export type HookEventName =
   | "SubagentStart"
   | "SubagentStop"
   | "TaskCompleted"
+  | "TaskCreated"
   | "TeammateIdle"
   | "UserPromptSubmit"
   | "WorktreeCreate"
@@ -272,6 +273,16 @@ export interface TaskCompletedHookInput extends BaseHookInput {
   team_name?: string;
 }
 
+// fires when a task is created via TaskCreate (v2.1.84)
+export interface TaskCreatedHookInput extends BaseHookInput {
+  hook_event_name: "TaskCreated";
+  task_id: string;
+  task_subject: string;
+  task_description?: string;
+  teammate_name?: string;
+  team_name?: string;
+}
+
 export interface ConfigChangeHookInput extends BaseHookInput {
   hook_event_name: "ConfigChange";
   source: "local_settings" | "policy_settings" | "project_settings" | "skills" | "user_settings";
@@ -374,6 +385,7 @@ export type ClaudeHookInput =
   | SubagentStartHookInput
   | SubagentStopHookInput
   | TaskCompletedHookInput
+  | TaskCreatedHookInput
   | TeammateIdleHookInput
   | UserPromptSubmitHookInput
   | WorktreeCreateHookInput
@@ -499,9 +511,18 @@ export interface TeammateIdleHookResponse extends BaseHookResponse {}
 
 export interface TaskCompletedHookResponse extends BaseHookResponse {}
 
+// fire-and-forget (v2.1.84)
+export interface TaskCreatedHookResponse extends BaseHookResponse {}
+
 export interface ConfigChangeHookResponse extends BaseHookResponse {}
 
-export interface WorktreeCreateHookResponse extends BaseHookResponse {}
+export interface WorktreeCreateHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "WorktreeCreate";
+    // returned by http hooks to specify the worktree path (v2.1.84)
+    worktreePath?: string;
+  };
+}
 
 export interface WorktreeRemoveHookResponse extends BaseHookResponse {}
 
@@ -561,6 +582,7 @@ export type HookResponse =
   | SubagentStartHookResponse
   | SubagentStopHookResponse
   | TaskCompletedHookResponse
+  | TaskCreatedHookResponse
   | TeammateIdleHookResponse
   | UserPromptSubmitHookResponse
   | WorktreeCreateHookResponse
@@ -618,6 +640,10 @@ export interface HookEventMap {
   TaskCompleted: {
     input: TaskCompletedHookInput;
     response: TaskCompletedHookResponse | void;
+  };
+  TaskCreated: {
+    input: TaskCreatedHookInput;
+    response: TaskCreatedHookResponse | void;
   };
   TeammateIdle: {
     input: TeammateIdleHookInput;

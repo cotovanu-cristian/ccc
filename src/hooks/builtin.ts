@@ -113,6 +113,12 @@ const builtins: BuiltinCommands = {
     batchable: true,
     handler: eventRecorder.record,
   }),
+  TaskCreated: createHook({
+    event: "TaskCreated",
+    id: "builtin-recorder",
+    batchable: true,
+    handler: eventRecorder.record,
+  }),
   TeammateIdle: createHook({
     event: "TeammateIdle",
     id: "builtin-recorder",
