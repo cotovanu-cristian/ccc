@@ -9,6 +9,7 @@ import {
   getHook,
   type HookAgentScope,
   type HookBatchCommandEntry,
+  type HookBatchCommandSource,
   isSubagentLocalHookInput,
 } from "@/hooks/hook-generator";
 import type { ClaudeHookInput } from "@/types/hooks";
@@ -241,16 +242,23 @@ const decodeBatchEntries = (payload: string): HookBatchCommandEntry[] => {
   }
 };
 
-const runHook = async (id: string, scope: HookAgentScope = "main") => {
+const runHook = async (id: string, scope: HookAgentScope = "main", source?: HookBatchCommandSource) => {
   const input = await readHookInput();
   if (scope === "main" && isSubagentLocalHookInput(input)) {
     process.exit(0);
   }
 
   bindHookInstanceId(input);
+
+  const runtimeOptions =
+    source === "builtin" ? { loadConfigHooks: false, loadPlugins: false }
+    : source === "config" ? { loadConfigHooks: true, loadPlugins: false }
+    : source === "plugin" ? { loadConfigHooks: true, loadPlugins: true }
+    : { loadConfigHooks: true, loadPlugins: true };
+
   await loadHookRuntime(input, {
-    loadConfigHooks: true,
-    loadPlugins: true,
+    loadConfigHooks: runtimeOptions.loadConfigHooks,
+    loadPlugins: runtimeOptions.loadPlugins,
   });
 
   const fn = getHook(id);
@@ -377,17 +385,20 @@ const main = async () => {
   const mode = process.argv[2];
   const id = process.argv[3];
   const scopeArg = process.argv[4];
+  const sourceArg = process.argv[5];
 
   if (!mode || !id || (mode !== "hook" && mode !== "hook-batch" && mode !== "mcp")) {
-    console.error("Usage: runner.ts <hook|hook-batch|mcp> <id> [scope]");
+    console.error("Usage: runner.ts <hook|hook-batch|mcp> <id> [scope] [source]");
     process.exit(2);
   }
 
   const scope: HookAgentScope = scopeArg === "all" ? "all" : "main";
+  const source: HookBatchCommandSource | undefined =
+    sourceArg === "builtin" || sourceArg === "config" || sourceArg === "plugin" ? sourceArg : undefined;
 
   try {
     if (mode === "hook") {
-      await runHook(id, scope);
+      await runHook(id, scope, source);
     } else if (mode === "hook-batch") {
       await runHookBatch(id);
     } else {

@@ -75,6 +75,9 @@ export interface HookCommand {
   shell?: "bash" | "powershell";
   timeout?: number;
   once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
+  // only evaluated for PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest
+  if?: string;
   // custom spinner status message while hook runs (v2.1.63)
   statusMessage?: string;
   // run in background without blocking (v2.1.63)
@@ -88,6 +91,8 @@ export interface HookPrompt {
   prompt: string;
   timeout?: number;
   once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
+  if?: string;
   // model to use for prompt evaluation (v2.1.63)
   model?: string;
   // custom spinner status message while hook runs (v2.1.63)
@@ -100,6 +105,8 @@ export interface HookHttp {
   url: string;
   timeout?: number;
   once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
+  if?: string;
   // additional request headers; values support $VAR_NAME interpolation (v2.1.63)
   headers?: Record<string, string>;
   // env vars allowed to be interpolated in header values (v2.1.63)
@@ -114,6 +121,8 @@ export interface HookAgent {
   prompt: string;
   timeout?: number;
   once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
+  if?: string;
   // model to use for agent hook (v2.1.63)
   model?: string;
   // custom spinner status message while hook runs (v2.1.63)

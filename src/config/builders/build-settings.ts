@@ -2,6 +2,7 @@ import { existsSync } from "fs";
 import { join } from "path";
 import { batchHookDefinitionsForEvent, type SourcedHookDefinition } from "@/hooks/batching";
 import { getBuiltinHookCommands } from "@/hooks/builtin";
+import { setInternalHookCommandSource } from "@/hooks/hook-generator";
 import type { PromptLayerData } from "@/config/helpers";
 import type { Context } from "@/context/Context";
 import type { HookDefinition, HooksConfiguration } from "@/types/hooks";
@@ -81,6 +82,14 @@ export const buildSettings = async (context: Context) => {
   }
 
   for (const [eventName, defs] of Object.entries(sourcedFinalHooks)) {
+    for (const definition of defs) {
+      for (const hook of definition.hooks) {
+        if (hook.type === "command") {
+          setInternalHookCommandSource(hook, definition.source);
+        }
+      }
+    }
+
     finalHooks[eventName] = batchHookDefinitionsForEvent(defs);
   }
 

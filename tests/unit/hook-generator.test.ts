@@ -5,6 +5,7 @@ import {
   createHook,
   getHook,
   isSubagentLocalHookInput,
+  setInternalHookCommandSource,
   setInstanceId,
 } from "@/hooks/hook-generator";
 import type {
@@ -111,6 +112,38 @@ describe("hook generator scope", () => {
     expect(hook.command.startsWith("sh -c ")).toBe(false);
     expect(hook.command).toContain("bun ");
     expect(hook.command).toContain("all");
+  });
+
+  test("tagging a single hook with a source adds it to the runner command", () => {
+    setInstanceId("hook-source-test");
+
+    const hook = createHook({
+      event: "PreToolUse",
+      id: "source-tagged-command",
+      handler: () => undefined,
+    });
+
+    setInternalHookCommandSource(hook, "config");
+
+    expect(hook.command).toContain("hook_PreToolUse_source-tagged-command");
+    expect(hook.command).toContain("'config'");
+  });
+
+  test("mixed-source hooks fall back to the legacy runner command", () => {
+    setInstanceId("hook-mixed-source-test");
+
+    const hook = createHook({
+      event: "PreToolUse",
+      id: "mixed-source-command",
+      handler: () => undefined,
+    });
+
+    setInternalHookCommandSource(hook, "config");
+    setInternalHookCommandSource(hook, "plugin");
+
+    expect(hook.command).toContain("hook_PreToolUse_mixed-source-command");
+    expect(hook.command).not.toContain("'config'");
+    expect(hook.command).not.toContain("'plugin'");
   });
 
   test("main scope skips subagent-local events at runtime", async () => {
@@ -249,29 +282,89 @@ describe("hook generator scope", () => {
     }
   });
 
-  test("runner preserves split utf-8 characters across stdin chunks", async () => {
-    const child = spawn("bun", [runnerPath, "hook", "hook_PreToolUse_loopy-sleep-exit", "main"], {
+  test("runner accepts a source-tagged single hook invocation", async () => {
+    const child = spawn("bun", [runnerPath, "hook", "hook_PreToolUse_global-bash-validation", "main", "config"], {
       env: {
         ...process.env,
-        CCC_INSTANCE_ID: "runner-utf8-test",
+        CCC_INSTANCE_ID: "runner-source-tagged-test",
         CCC_CONFIG_DIR: configDir,
       },
       stdio: ["pipe", "pipe", "pipe"],
     });
 
     let stderr = "";
+    let stdout = "";
     child.stderr.on("data", (chunk) => {
       stderr += chunk.toString();
     });
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
 
-    const marker = "€";
     const input = {
       ...baseInput,
       hook_event_name: "PreToolUse",
       tool_name: "Bash",
+      tool_input: { command: "git reset --hard", description: "test" },
+      tool_use_id: "tool-source-tagged",
+    };
+
+    child.stdin.write(JSON.stringify(input));
+
+    try {
+      const exitCode = await waitForExit(child, 5000);
+      expect(exitCode).toBe(0);
+      expect(stderr).toBe("");
+      expect(JSON.parse(stdout)).toMatchObject({
+        continue: true,
+        decision: "block",
+      });
+    } finally {
+      child.stdin.destroy();
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+        await waitForExit(child, 5000);
+      }
+    }
+  });
+
+  test("runner preserves split utf-8 characters across stdin chunks", async () => {
+    const child = spawn(
+      "bun",
+      [runnerPath, "hook", "hook_PreToolUse_global-todowrite-validation", "main", "config"],
+      {
+        env: {
+          ...process.env,
+          CCC_INSTANCE_ID: "runner-utf8-test",
+          CCC_CONFIG_DIR: configDir,
+        },
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
+
+    let stderr = "";
+    let stdout = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    const marker = "€";
+    const todoContent = `split-${marker}-char`;
+    const input = {
+      ...baseInput,
+      hook_event_name: "PreToolUse",
+      tool_name: "TodoWrite",
       tool_input: {
-        command: "echo ok",
-        description: `split-${marker}-char`,
+        todos: [
+          {
+            content: todoContent,
+            status: "pending",
+            activeForm: "testing",
+          },
+        ],
       },
       tool_use_id: "tool-utf8",
     };
@@ -288,7 +381,12 @@ describe("hook generator scope", () => {
     try {
       const exitCode = await waitForExit(child, 5000);
       expect(exitCode).toBe(0);
-      expect(stderr).toContain(`desc: split-${marker}-char`);
+      expect(stderr).toBe("");
+      expect(JSON.parse(stdout)).toMatchObject({
+        continue: true,
+        decision: "block",
+      });
+      expect(stdout).toContain(todoContent);
     } finally {
       child.stdin.destroy();
       if (child.exitCode === null) {

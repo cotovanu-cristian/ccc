@@ -226,6 +226,8 @@ export const settingsSchema = z.object({
   claudeFileHistoryEnabled: z.boolean().optional(),
   // disable all hooks globally
   disableAllHooks: z.boolean().optional(),
+  // default shell for ! commands: bash (default) or powershell (v2.1.85)
+  defaultShell: z.enum(["bash", "powershell"]).optional(),
   // agent teams display mode (v2.1.32)
   teammateMode: z.enum(["auto", "in-process", "tmux"]).optional(),
   // customize spinner verbs (v2.1.23)
@@ -245,6 +247,8 @@ export const settingsSchema = z.object({
   effortLevel: z.enum(["low", "medium", "high"]).optional(),
   // output style to adjust system prompt (e.g., "Explanatory")
   outputStyle: z.string().optional(),
+  // advisor model for server-side advisor tool (v2.1.85)
+  advisorModel: z.string().optional(),
 
   apiKeyHelper: z.string().optional(),
   awsAuthRefresh: z.string().optional(),
@@ -252,6 +256,14 @@ export const settingsSchema = z.object({
   gcpAuthRefresh: z.string().optional(),
   // script outputting JSON with AWS credentials
   awsCredentialExport: z.string().optional(),
+  // XAA (SEP-990) cross-account auth IdP config; all XAA-enabled MCP servers reuse this (v2.1.85)
+  xaaIdp: z
+    .object({
+      issuer: z.string().url(),
+      clientId: z.string(),
+      callbackPort: z.number().int().positive().optional(),
+    })
+    .optional(),
   cleanupPeriodDays: z.number().optional(),
   companyAnnouncements: z.array(z.string()).optional(),
   enableAllProjectMcpServers: z.boolean().optional(),
@@ -405,6 +417,8 @@ export const settingsSchema = z.object({
     .optional(),
   // prevent claude-cli:// protocol handler registration (v2.1.83)
   disableDeepLinkRegistration: z.enum(["disable"]).optional(),
+  // whether plan mode uses auto mode semantics (v2.1.85, default true)
+  useAutoModeDuringPlan: z.boolean().optional(),
   // auto mode classifier rules (v2.1.71)
   autoMode: z
     .object({
@@ -413,6 +427,8 @@ export const settingsSchema = z.object({
       environment: z.array(z.string()).optional(),
     })
     .optional(),
+  // name of a built-in or custom agent for the main thread (v2.1.85)
+  agent: z.string().optional(),
 
   permissions: z
     .object({

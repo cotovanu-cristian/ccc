@@ -21,6 +21,7 @@ interface InternalHookCommandMetadata {
   hookId: string;
   scope: HookAgentScope;
   batchable: boolean;
+  source?: HookBatchCommandSource | "mixed";
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,6 +38,20 @@ export const getInternalHookCommandMetadata = (
   hook: HookCommand,
 ): InternalHookCommandMetadata | undefined => {
   return internalHookCommandMetadata.get(hook);
+};
+
+export const setInternalHookCommandSource = (hook: HookCommand, source: HookBatchCommandSource): void => {
+  const metadata = internalHookCommandMetadata.get(hook);
+  if (!metadata) return;
+
+  if (!metadata.source) {
+    metadata.source = source;
+    return;
+  }
+
+  if (metadata.source !== source) {
+    metadata.source = "mixed";
+  }
 };
 
 const generateHookId = <E extends HookEventName>(eventName: E, stableId: string) =>
@@ -84,13 +99,14 @@ export interface CreateHookOptions<E extends HookEventName> {
   id: string;
   handler: HookHandler<E>;
   scope?: HookAgentScope;
+  source?: HookBatchCommandSource;
   batchable?: boolean;
   timeout?: number;
   once?: boolean;
 }
 
 export const createHook = <E extends HookEventName>(options: CreateHookOptions<E>): HookCommand => {
-  const { event, id, handler, scope = "main", batchable = false, timeout, once } = options;
+  const { event, id, handler, scope = "main", source, batchable = false, timeout, once } = options;
   const hookId = generateHookId(event, id);
 
   hooksMap.set(hookId, async (input) => {
@@ -101,13 +117,16 @@ export const createHook = <E extends HookEventName>(options: CreateHookOptions<E
   const hook: HookCommand = {
     type: "command",
     get command() {
-      return getRunnerCommand("hook", hookId, scope);
+      const metadata = internalHookCommandMetadata.get(hook);
+      const runtimeSource =
+        metadata?.source && metadata.source !== "mixed" ? metadata.source : undefined;
+      return getRunnerCommand("hook", hookId, scope, ...(runtimeSource ? [runtimeSource] : []));
     },
     timeout,
     once,
   };
 
-  internalHookCommandMetadata.set(hook, { hookId, scope, batchable });
+  internalHookCommandMetadata.set(hook, { hookId, scope, batchable, source });
   return hook;
 };
 

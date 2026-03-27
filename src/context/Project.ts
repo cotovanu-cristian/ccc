@@ -21,7 +21,20 @@ export class Project {
     this.rootDirectory = this.findProjectRoot(workingDirectory);
   }
 
+  private hasStaticPath(relativePath: string, entryType: "file" | "directory"): boolean {
+    try {
+      const stats = statSync(join(this.rootDirectory, relativePath));
+      return entryType === "file" ? stats.isFile() : stats.isDirectory();
+    } catch {
+      return false;
+    }
+  }
+
   private hasFilePattern(pattern: string): boolean {
+    if (!glob.isDynamicPattern(pattern)) {
+      return this.hasStaticPath(pattern, "file");
+    }
+
     try {
       const matches = glob.sync(pattern, {
         cwd: this.rootDirectory,
@@ -32,13 +45,15 @@ export class Project {
       });
       return matches.length > 0;
     } catch {
-      // fallback to exact match
-      const path = join(this.rootDirectory, pattern);
-      return existsSync(path) && statSync(path).isFile();
+      return this.hasStaticPath(pattern, "file");
     }
   }
 
   private hasDirectoryPattern(pattern: string): boolean {
+    if (!glob.isDynamicPattern(pattern)) {
+      return this.hasStaticPath(pattern, "directory");
+    }
+
     try {
       const matches = glob.sync(pattern, {
         cwd: this.rootDirectory,
@@ -49,9 +64,7 @@ export class Project {
       });
       return matches.length > 0;
     } catch {
-      // fallback to exact match
-      const path = join(this.rootDirectory, pattern);
-      return existsSync(path) && statSync(path).isDirectory();
+      return this.hasStaticPath(pattern, "directory");
     }
   }
 
