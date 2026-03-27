@@ -82,6 +82,10 @@ const waitForExit = async (
 
 const runnerPath = join(process.cwd(), "src", "cli", "runner.ts");
 const configDir = join(process.cwd(), "dev-config");
+const fastTimeoutEnv = {
+  CCC_HOOK_INPUT_IDLE_TIMEOUT_MS: "100",
+  CCC_HOOK_INPUT_TOTAL_TIMEOUT_MS: "300",
+};
 
 describe("hook generator scope", () => {
   test("createHook defaults to passing main scope to the runner", () => {
@@ -320,6 +324,160 @@ describe("hook generator scope", () => {
         decision: "block",
       });
     } finally {
+      child.stdin.destroy();
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+        await waitForExit(child, 5000);
+      }
+    }
+  });
+
+  test("runner ignores trailing stdin after the first complete JSON object", async () => {
+    const child = spawn("bun", [runnerPath, "hook", "hook_PreToolUse_global-bash-validation", "main", "config"], {
+      env: {
+        ...process.env,
+        CCC_INSTANCE_ID: "runner-trailing-stdin-test",
+        CCC_CONFIG_DIR: configDir,
+      },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    let stderr = "";
+    let stdout = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    const input = {
+      ...baseInput,
+      hook_event_name: "PreToolUse",
+      tool_name: "Bash",
+      tool_input: { command: "git reset --hard", description: "test" },
+      tool_use_id: "tool-trailing-stdin",
+    };
+
+    child.stdin.write(`${JSON.stringify(input)} trailing-bytes-that-should-be-ignored`);
+
+    try {
+      const exitCode = await waitForExit(child, 5000);
+      expect(exitCode).toBe(0);
+      expect(stderr).toBe("");
+      expect(JSON.parse(stdout)).toMatchObject({
+        continue: true,
+        decision: "block",
+      });
+    } finally {
+      child.stdin.destroy();
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+        await waitForExit(child, 5000);
+      }
+    }
+  });
+
+  test("runner fails fast when stdin starts with non-json data", async () => {
+    const child = spawn("bun", [runnerPath, "hook", "hook_SessionStart_global-session-start", "main", "config"], {
+      env: {
+        ...process.env,
+        ...fastTimeoutEnv,
+        CCC_INSTANCE_ID: "runner-leading-garbage-test",
+        CCC_CONFIG_DIR: configDir,
+      },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    let stderr = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.stdin.write("x{\"hook_event_name\":\"SessionStart\"}");
+
+    try {
+      const exitCode = await waitForExit(child, 2000);
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain("Hook stdin must start with a top-level JSON object");
+    } finally {
+      child.stdin.destroy();
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+        await waitForExit(child, 5000);
+      }
+    }
+  });
+
+  test("runner fails on idle stdin timeout while waiting for a complete JSON object", async () => {
+    const child = spawn("bun", [runnerPath, "hook", "hook_SessionStart_global-session-start", "main", "config"], {
+      env: {
+        ...process.env,
+        ...fastTimeoutEnv,
+        CCC_INSTANCE_ID: "runner-idle-timeout-test",
+        CCC_CONFIG_DIR: configDir,
+      },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    let stderr = "";
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.stdin.write("{\"hook_event_name\":\"SessionStart\"");
+
+    try {
+      const exitCode = await waitForExit(child, 2000);
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain("Hook stdin idle timeout after 100ms");
+    } finally {
+      child.stdin.destroy();
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+        await waitForExit(child, 5000);
+      }
+    }
+  });
+
+  test("runner fails on total stdin timeout when incomplete input keeps streaming", async () => {
+    const child = spawn("bun", [runnerPath, "hook", "hook_SessionStart_global-session-start", "main", "config"], {
+      env: {
+        ...process.env,
+        ...fastTimeoutEnv,
+        CCC_INSTANCE_ID: "runner-total-timeout-test",
+        CCC_CONFIG_DIR: configDir,
+      },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    let stderr = "";
+    child.stdin.on("error", () => {
+      // expected if the runner exits while the interval is still writing
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.stdin.write(
+      '{"hook_event_name":"SessionStart","session_id":"session-1","transcript_path":"/tmp/transcript.jsonl","cwd":"/tmp/project","source":"startup","message":"',
+    );
+
+    const interval = setInterval(() => {
+      if (child.exitCode !== null || child.killed || child.stdin.destroyed) {
+        clearInterval(interval);
+        return;
+      }
+
+      child.stdin.write("x");
+    }, 25);
+
+    try {
+      const exitCode = await waitForExit(child, 2000);
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain("Hook stdin total timeout after 300ms");
+    } finally {
+      clearInterval(interval);
       child.stdin.destroy();
       if (child.exitCode === null) {
         child.kill("SIGKILL");

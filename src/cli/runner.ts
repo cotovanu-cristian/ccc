@@ -69,51 +69,154 @@ const discover = (kind: "hooks" | "mcps"): string[] => {
   return out.map((p) => pathToFileURL(p).href);
 };
 
+const getHookInputTimeoutMs = (envName: string, fallbackMs: number): number => {
+  const rawValue = process.env[envName]?.trim();
+  if (!rawValue) return fallbackMs;
+
+  const parsedValue = Number(rawValue);
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0) return fallbackMs;
+  return parsedValue;
+};
+
+const HOOK_INPUT_IDLE_TIMEOUT_MS = getHookInputTimeoutMs("CCC_HOOK_INPUT_IDLE_TIMEOUT_MS", 5000);
+const HOOK_INPUT_TOTAL_TIMEOUT_MS = getHookInputTimeoutMs("CCC_HOOK_INPUT_TOTAL_TIMEOUT_MS", 10000);
+
 const readStdin = async (): Promise<string> => {
   return new Promise((resolve, reject) => {
-    let inputJson = "";
+    let jsonCandidate = "";
     let isSettled = false;
     const decoder = new StringDecoder("utf8");
+    let hasStartedJson = false;
+    let jsonDepth = 0;
+    let inString = false;
+    let isEscaped = false;
+    let idleTimer: NodeJS.Timeout | undefined;
+    let totalTimer: NodeJS.Timeout | undefined;
+
+    const clearTimers = () => {
+      if (idleTimer) {
+        clearTimeout(idleTimer);
+        idleTimer = undefined;
+      }
+
+      if (totalTimer) {
+        clearTimeout(totalTimer);
+        totalTimer = undefined;
+      }
+    };
 
     const cleanup = () => {
+      clearTimers();
       process.stdin.off("data", onData);
       process.stdin.off("end", onEnd);
       process.stdin.off("error", onError);
       process.stdin.pause();
     };
 
-    const resolveIfJsonComplete = () => {
-      if (!inputJson.trim()) return false;
-
-      try {
-        JSON.parse(inputJson);
-      } catch {
-        return false;
-      }
-
+    const finish = (value: string) => {
+      if (isSettled) return;
       isSettled = true;
       cleanup();
-      resolve(inputJson);
-      return true;
+      resolve(value);
+    };
+
+    const fail = (error: Error) => {
+      if (isSettled) return;
+      isSettled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const scheduleIdleTimeout = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        fail(new Error(`Hook stdin idle timeout after ${HOOK_INPUT_IDLE_TIMEOUT_MS}ms before a complete JSON object was received`));
+      }, HOOK_INPUT_IDLE_TIMEOUT_MS);
+      idleTimer.unref?.();
+    };
+
+    const consumeText = (text: string) => {
+      for (const char of text) {
+        if (!hasStartedJson) {
+          if (/\s/u.test(char)) continue;
+          if (char !== "{") {
+            fail(new Error(`Hook stdin must start with a top-level JSON object, got ${JSON.stringify(char)}`));
+            return;
+          }
+
+          hasStartedJson = true;
+          jsonDepth = 1;
+          jsonCandidate = "{";
+          continue;
+        }
+
+        jsonCandidate += char;
+
+        if (inString) {
+          if (isEscaped) {
+            isEscaped = false;
+            continue;
+          }
+
+          if (char === "\\") {
+            isEscaped = true;
+            continue;
+          }
+
+          if (char === '"') {
+            inString = false;
+          }
+
+          continue;
+        }
+
+        if (char === '"') {
+          inString = true;
+          continue;
+        }
+
+        if (char === "{") {
+          jsonDepth += 1;
+          continue;
+        }
+
+        if (char === "}") {
+          jsonDepth -= 1;
+          if (jsonDepth === 0) {
+            finish(jsonCandidate);
+            return;
+          }
+        }
+      }
     };
 
     const onData = (chunk: Buffer | string) => {
-      inputJson += typeof chunk === "string" ? chunk : decoder.write(chunk);
-      resolveIfJsonComplete();
+      scheduleIdleTimeout();
+      consumeText(typeof chunk === "string" ? chunk : decoder.write(chunk));
     };
 
     const onEnd = () => {
       if (isSettled) return;
-      inputJson += decoder.end();
-      cleanup();
-      resolve(inputJson);
+      consumeText(decoder.end());
+      if (isSettled) return;
+
+      if (!hasStartedJson) {
+        fail(new Error("No input received on stdin"));
+        return;
+      }
+
+      fail(new Error("Hook stdin ended before a complete JSON object was received"));
     };
 
     const onError = (error: Error) => {
-      if (isSettled) return;
-      cleanup();
-      reject(error);
+      fail(error);
     };
+
+    scheduleIdleTimeout();
+    totalTimer = setTimeout(() => {
+      fail(new Error(`Hook stdin total timeout after ${HOOK_INPUT_TOTAL_TIMEOUT_MS}ms before a complete JSON object was received`));
+    }, HOOK_INPUT_TOTAL_TIMEOUT_MS);
+    totalTimer.unref?.();
 
     process.stdin.on("data", onData);
     process.stdin.on("end", onEnd);
@@ -137,9 +240,11 @@ const loadCCCPlugins = async (context: Context) => {
 };
 
 const readHookInput = async (): Promise<ClaudeHookInput> => {
-  const inputJson = await readStdin();
-  if (!inputJson) {
-    console.error("No input received on stdin");
+  let inputJson: string;
+  try {
+    inputJson = await readStdin();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : `Failed to read hook input: ${String(error)}`);
     process.exit(2);
   }
 
