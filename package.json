@@ -14,6 +14,7 @@
     "test:shell": "docker compose -f tests/docker/docker-compose.yml run --rm shell"
   },
   "devDependencies": {
+    "@standard-schema/spec": "^1.0.0",
     "@types/bun": "latest",
     "@types/eventsource": "^3.0.0",
     "@types/json-schema": "^7.0.15",
@@ -32,7 +33,6 @@
     "fast-glob": "^3.3.3",
     "fastmcp": "^3.34.0",
     "json-schema": "^0.4.0",
-    "json-schema-to-zod": "^2.7.0",
     "memfs": "^4.56.11",
     "picocolors": "^1.1.1",
     "picoprint": "^1.0.6",

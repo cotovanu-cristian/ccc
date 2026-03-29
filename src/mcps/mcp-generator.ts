@@ -1,9 +1,34 @@
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { FastMCP } from "fastmcp";
-import { z } from "zod";
-import type { MCPInitializeResponse } from "@/types/mcp-protocol";
+import type { JsonSchema, MCPInitializeResponse } from "@/types/mcp-protocol";
 import type { ClaudeMCPConfig, FastMCPFactory, MCPLayerData, MCPToolFilter } from "@/types/mcps";
 import { log } from "@/utils/log";
 import { MCPClient } from "./mcp-client";
+
+// xsschema (used by fastmcp) fast-path: when "jsonSchema" exists on "~standard",
+// toJsonSchema() calls schema["~standard"].jsonSchema.input() directly
+// instead of dispatching through a vendor-specific converter
+type JsonSchemaToolParameters = StandardSchemaV1<unknown, unknown> & {
+  "~standard": StandardSchemaV1.Props<unknown, unknown> & {
+    jsonSchema: {
+      input: (_options?: { target?: string }) => JsonSchema;
+    };
+  };
+};
+
+const createJsonSchemaToolParameters = (schema: JsonSchema): JsonSchemaToolParameters => {
+  return {
+    "~standard": {
+      version: 1,
+      vendor: "ccc-json-schema-proxy",
+      // upstream MCP still performs authoritative validation on tool calls
+      validate: (value: unknown) => ({ value }),
+      jsonSchema: {
+        input: () => schema,
+      },
+    },
+  };
+};
 
 export const createMCP = (factory: FastMCPFactory): MCPLayerData => {
   return { type: "inline", config: factory };
@@ -55,13 +80,12 @@ export const createMCPProxy = (originalConfig: ClaudeMCPConfig, filter: MCPToolF
           if (!filter(filterableTool)) continue;
 
           registeredTools++;
-          // use permissive schema - upstream MCP validates actual args
-          const parameters = z.record(z.string(), z.any());
+          const parameters = tool.inputSchema ? createJsonSchemaToolParameters(tool.inputSchema) : undefined;
 
           server.addTool({
             name: tool.name,
             description: tool.description || "",
-            parameters,
+            ...(parameters ? { parameters } : {}),
             execute: async (args) => {
               try {
                 const response = await client.callTool(tool.name, args);
