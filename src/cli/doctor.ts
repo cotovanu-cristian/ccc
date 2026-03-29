@@ -12,6 +12,9 @@ import { loadConfigFromLayers, loadConfigLayer, loadPromptFile } from "@/config/
 import { isHttpMCP, isSseMCP } from "@/types/mcps";
 import { resolveConfigDirectoryPath } from "@/utils/config-directory";
 
+const SKILL_MD = "SKILL.md";
+const SKILL_TS = "SKILL.ts";
+
 type LayerKind = "global" | "preset" | "project";
 
 interface TraceEntry {
@@ -70,8 +73,9 @@ const listSkillNames = (dirPath: string | undefined): string[] => {
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
     const skillDir = join(dirPath, entry.name);
-    const skillFile = join(skillDir, "SKILL.md");
-    if (existsSync(skillFile)) names.push(entry.name);
+    if (existsSync(join(skillDir, SKILL_TS)) || existsSync(join(skillDir, SKILL_MD))) {
+      names.push(entry.name);
+    }
   }
   return names.sort();
 };
