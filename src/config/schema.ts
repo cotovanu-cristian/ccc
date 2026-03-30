@@ -210,26 +210,14 @@ export const settingsSchema = z.object({
   respectGitignore: z.boolean().optional(),
   // customize where plan files are stored
   plansDirectory: z.string().optional(),
-  // hide turn duration messages (e.g., "Cooked for 1m 6s")
-  showTurnDuration: z.boolean().optional(),
-  // hide status line entirely
-  hideStatusLine: z.boolean().optional(),
   // reduce or disable UI animations (v2.1.30)
   prefersReducedMotion: z.boolean().optional(),
-  // toggle between stable/latest update channels (deprecated, use autoUpdatesChannel)
-  releaseChannel: z.enum(["stable", "latest"]).optional(),
   // release channel: stable (week-old, skips regressions) or latest (most recent)
   autoUpdatesChannel: z.enum(["stable", "latest"]).optional(),
-  // disable automatic updates
-  disableAutoUpdate: z.boolean().optional(),
-  // enable/disable file history feature
-  claudeFileHistoryEnabled: z.boolean().optional(),
   // disable all hooks globally
   disableAllHooks: z.boolean().optional(),
   // default shell for ! commands: bash (default) or powershell (v2.1.85)
   defaultShell: z.enum(["bash", "powershell"]).optional(),
-  // agent teams display mode (v2.1.32)
-  teammateMode: z.enum(["auto", "in-process", "tmux"]).optional(),
   // customize spinner verbs (v2.1.23)
   spinnerVerbs: z
     .object({
@@ -237,8 +225,6 @@ export const settingsSchema = z.object({
       verbs: z.array(z.string()),
     })
     .optional(),
-  // enable terminal progress bar in supported terminals (v2.1.30)
-  terminalProgressBarEnabled: z.boolean().optional(),
   // enable fast mode for faster Opus 4.6 responses at higher cost (v2.1.36)
   fastMode: z.boolean().optional(),
   // per-session fast mode opt-in (v2.1.59)
@@ -256,14 +242,6 @@ export const settingsSchema = z.object({
   gcpAuthRefresh: z.string().optional(),
   // script outputting JSON with AWS credentials
   awsCredentialExport: z.string().optional(),
-  // XAA (SEP-990) cross-account auth IdP config; all XAA-enabled MCP servers reuse this (v2.1.85)
-  xaaIdp: z
-    .object({
-      issuer: z.string().url(),
-      clientId: z.string(),
-      callbackPort: z.number().int().positive().optional(),
-    })
-    .optional(),
   cleanupPeriodDays: z.number().optional(),
   companyAnnouncements: z.array(z.string()).optional(),
   enableAllProjectMcpServers: z.boolean().optional(),
@@ -375,20 +353,6 @@ export const settingsSchema = z.object({
   strictKnownMarketplaces: z.array(marketplaceSourceSchema).optional(),
   // rate (0-1) for session quality survey prompts; enterprise admins only (v2.1.76)
   feedbackSurveyRate: z.number().min(0).max(1).optional(),
-  // enable auto-compact when context is running low (v2.1.65)
-  autoCompactEnabled: z.boolean().optional(),
-  // enable file checkpointing for undo/redo (v2.1.65)
-  fileCheckpointingEnabled: z.boolean().optional(),
-  // disable LSP recommendation prompts (v2.1.65)
-  lspRecommendationDisabled: z.boolean().optional(),
-  // show permission explainer UI (v2.1.65)
-  permissionExplainerEnabled: z.boolean().optional(),
-  // show PR status footer in terminal (v2.1.65)
-  prStatusFooterEnabled: z.boolean().optional(),
-  // default-enable Claude in Chrome extension (v2.1.65)
-  claudeInChromeDefaultEnabled: z.boolean().optional(),
-  // enable the todo/task feature in UI (v2.1.65)
-  todoFeatureEnabled: z.boolean().optional(),
   // control whether git commit/PR workflow instructions are included (v2.1.69)
   includeGitInstructions: z.boolean().optional(),
   // show thinking summaries in transcript view (ctrl+o) (v2.1.69)
