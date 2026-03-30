@@ -1,7 +1,7 @@
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
-export const expandPath = (path: string): string => {
+export const expandPath = (path: string) => {
   let expandedPath = path;
   if (path.startsWith("~/")) {
     expandedPath = join(homedir(), path.slice(2));
@@ -12,7 +12,7 @@ export const expandPath = (path: string): string => {
   return resolve(expandedPath);
 };
 
-export const convertPathToId = (path: string, fallback = "root"): string => {
+export const convertPathToId = (path: string, fallback = "root") => {
   const sanitized = path
     .replace(/[^\dA-Za-z-]/g, "_")
     .replace(/_+/g, "_")

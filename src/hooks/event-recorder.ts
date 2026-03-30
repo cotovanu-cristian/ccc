@@ -29,7 +29,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.dirname(path.dirname(__dirname));
 
-const getInstanceCacheDir = (): string | null => {
+const getInstanceCacheDir = () => {
   const instanceId = process.env.CCC_INSTANCE_ID;
   if (!instanceId) {
     console.error("Event recording failed: CCC_INSTANCE_ID is not set");
@@ -39,7 +39,7 @@ const getInstanceCacheDir = (): string | null => {
   return path.join(rootDir, ".cache", instanceId);
 };
 
-const appendJsonLineInInstanceCache = (filename: string, payload: unknown): void => {
+const appendJsonLineInInstanceCache = (filename: string, payload: unknown) => {
   try {
     const cacheDir = getInstanceCacheDir();
     if (!cacheDir) return;

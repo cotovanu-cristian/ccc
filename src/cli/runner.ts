@@ -26,7 +26,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const launcherRoot = dirname(dirname(__dirname));
 
-const resolveConfigDirectory = (): string => {
+const resolveConfigDirectory = () => {
   const override = process.env.CCC_CONFIG_DIR?.trim();
   if (override) {
     if (existsSync(override)) return override;
@@ -39,7 +39,7 @@ const resolveConfigDirectory = (): string => {
   return join(launcherRoot, "config");
 };
 
-const discover = (kind: "hooks" | "mcps"): string[] => {
+const discover = (kind: "hooks" | "mcps") => {
   const cfgDir = resolveConfigDirectory();
   const out: string[] = [];
 
@@ -69,7 +69,7 @@ const discover = (kind: "hooks" | "mcps"): string[] => {
   return out.map((p) => pathToFileURL(p).href);
 };
 
-const getHookInputTimeoutMs = (envName: string, fallbackMs: number): number => {
+const getHookInputTimeoutMs = (envName: string, fallbackMs: number) => {
   const rawValue = process.env[envName]?.trim();
   if (!rawValue) return fallbackMs;
 
@@ -79,10 +79,10 @@ const getHookInputTimeoutMs = (envName: string, fallbackMs: number): number => {
 };
 
 const HOOK_INPUT_IDLE_TIMEOUT_MS = getHookInputTimeoutMs("CCC_HOOK_INPUT_IDLE_TIMEOUT_MS", 5000);
-const HOOK_INPUT_TOTAL_TIMEOUT_MS = getHookInputTimeoutMs("CCC_HOOK_INPUT_TOTAL_TIMEOUT_MS", 10000);
+const HOOK_INPUT_TOTAL_TIMEOUT_MS = getHookInputTimeoutMs("CCC_HOOK_INPUT_TOTAL_TIMEOUT_MS", 10_000);
 
-const readStdin = async (): Promise<string> => {
-  return new Promise((resolve, reject) => {
+const readStdin = async () => {
+  return new Promise<string>((resolve, reject) => {
     let jsonCandidate = "";
     let isSettled = false;
     const decoder = new StringDecoder("utf8");
@@ -130,7 +130,11 @@ const readStdin = async (): Promise<string> => {
     const scheduleIdleTimeout = () => {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        fail(new Error(`Hook stdin idle timeout after ${HOOK_INPUT_IDLE_TIMEOUT_MS}ms before a complete JSON object was received`));
+        fail(
+          new Error(
+            `Hook stdin idle timeout after ${HOOK_INPUT_IDLE_TIMEOUT_MS}ms before a complete JSON object was received`,
+          ),
+        );
       }, HOOK_INPUT_IDLE_TIMEOUT_MS);
       idleTimer.unref?.();
     };
@@ -140,7 +144,9 @@ const readStdin = async (): Promise<string> => {
         if (!hasStartedJson) {
           if (/\s/u.test(char)) continue;
           if (char !== "{") {
-            fail(new Error(`Hook stdin must start with a top-level JSON object, got ${JSON.stringify(char)}`));
+            fail(
+              new Error(`Hook stdin must start with a top-level JSON object, got ${JSON.stringify(char)}`),
+            );
             return;
           }
 
@@ -214,7 +220,11 @@ const readStdin = async (): Promise<string> => {
 
     scheduleIdleTimeout();
     totalTimer = setTimeout(() => {
-      fail(new Error(`Hook stdin total timeout after ${HOOK_INPUT_TOTAL_TIMEOUT_MS}ms before a complete JSON object was received`));
+      fail(
+        new Error(
+          `Hook stdin total timeout after ${HOOK_INPUT_TOTAL_TIMEOUT_MS}ms before a complete JSON object was received`,
+        ),
+      );
     }, HOOK_INPUT_TOTAL_TIMEOUT_MS);
     totalTimer.unref?.();
 

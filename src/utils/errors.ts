@@ -54,7 +54,7 @@ export const formatConfigError = (
   layer: ConfigLayer,
   layerName: string | undefined,
   filePath: string,
-): string => {
+) => {
   const layerStr = layerName ? `${layer}:${layerName}` : layer;
   const errorMsg = error instanceof Error ? error.message : String(error);
   return `[${layerStr}] ${filePath}: ${errorMsg}`;

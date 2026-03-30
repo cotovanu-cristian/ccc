@@ -29,9 +29,7 @@ export type PluginEnablementValue = z.infer<typeof pluginEnablementValueSchema>;
 export const pluginEnablementConfigSchema = z.record(z.string(), pluginEnablementValueSchema);
 export type PluginEnablementConfig = z.infer<typeof pluginEnablementConfigSchema>;
 
-export const normalizeEnablement = (
-  value: PluginEnablementValue,
-): { enabled: boolean; settings: Record<string, unknown> } => {
+export const normalizeEnablement = (value: PluginEnablementValue) => {
   if (typeof value === "boolean") {
     return { enabled: value, settings: {} };
   }

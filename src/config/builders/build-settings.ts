@@ -103,7 +103,7 @@ export const buildSettings = async (context: Context) => {
 };
 
 // extract content from PromptConfig (both string and PromptLayerData)
-const getPromptContent = (config: { content: string } | string): string => {
+const getPromptContent = (config: { content: string } | string) => {
   return typeof config === "string" ? config : config.content;
 };
 

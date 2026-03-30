@@ -67,7 +67,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const waitForExit = async (
   child: ReturnType<typeof spawn>,
   timeoutMs: number,
-): Promise<number | null> => {
+) => {
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {

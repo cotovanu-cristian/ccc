@@ -21,7 +21,7 @@ export class Project {
     this.rootDirectory = this.findProjectRoot(workingDirectory);
   }
 
-  private hasStaticPath(relativePath: string, entryType: "file" | "directory"): boolean {
+  private hasStaticPath(relativePath: string, entryType: "directory" | "file"): boolean {
     try {
       const stats = statSync(join(this.rootDirectory, relativePath));
       return entryType === "file" ? stats.isFile() : stats.isDirectory();

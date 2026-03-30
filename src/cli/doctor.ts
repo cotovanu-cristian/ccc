@@ -54,7 +54,7 @@ export interface DoctorReport {
   skills: ItemTraces;
 }
 
-const listItemNames = (dirPath: string | undefined): string[] => {
+const listItemNames = (dirPath: string | undefined) => {
   if (!dirPath || !existsSync(dirPath)) return [];
   const files = readdirSync(dirPath);
   const names = new Set<string>();
@@ -66,7 +66,7 @@ const listItemNames = (dirPath: string | undefined): string[] => {
   return Array.from(names).sort();
 };
 
-const listSkillNames = (dirPath: string | undefined): string[] => {
+const listSkillNames = (dirPath: string | undefined) => {
   if (!dirPath || !existsSync(dirPath)) return [];
   const entries = readdirSync(dirPath, { withFileTypes: true });
   const names: string[] = [];
@@ -145,7 +145,7 @@ const collectLayeredItems = async (context: Context, kind: "agents" | "commands"
   return items;
 };
 
-const getMCPType = (mcp: ClaudeMCPConfig): "http" | "sse" | "stdio" => {
+const getMCPType = (mcp: ClaudeMCPConfig) => {
   if (isHttpMCP(mcp)) return "http";
   if (isSseMCP(mcp)) return "sse";
   return "stdio";
@@ -294,7 +294,7 @@ const collectLayeredSkills = async (context: Context): Promise<ItemTraces> => {
   return items;
 };
 
-const listRuleNames = (dirPath: string | undefined): string[] => {
+const listRuleNames = (dirPath: string | undefined) => {
   if (!dirPath || !existsSync(dirPath)) return [];
   const names: string[] = [];
 

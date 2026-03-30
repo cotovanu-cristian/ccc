@@ -40,7 +40,7 @@ export const getInternalHookCommandMetadata = (
   return internalHookCommandMetadata.get(hook);
 };
 
-export const setInternalHookCommandSource = (hook: HookCommand, source: HookBatchCommandSource): void => {
+export const setInternalHookCommandSource = (hook: HookCommand, source: HookBatchCommandSource) => {
   const metadata = internalHookCommandMetadata.get(hook);
   if (!metadata) return;
 
@@ -61,7 +61,7 @@ const getRunnerPath = () => {
   return join(dirname(__dirname), "cli", "runner.ts");
 };
 
-const getHookCommandEnvPrefix = (): string => {
+const getHookCommandEnvPrefix = () => {
   return buildInlineEnvCommandPrefix({
     DEBUG: process.env.DEBUG,
     CCC_INSTANCE_ID: currentInstanceId,
@@ -69,7 +69,7 @@ const getHookCommandEnvPrefix = (): string => {
   });
 };
 
-const getRunnerCommand = (mode: "hook-batch" | "hook", ...args: string[]): string => {
+const getRunnerCommand = (mode: "hook-batch" | "hook", ...args: string[]) => {
   const runnerPath = getRunnerPath();
   const envPrefix = getHookCommandEnvPrefix();
   const prefix = envPrefix.length > 0 ? `${envPrefix} ` : "";
@@ -77,12 +77,12 @@ const getRunnerCommand = (mode: "hook-batch" | "hook", ...args: string[]): strin
   return `${prefix}bun ${shQuote(runnerPath)} ${mode}${serializedArgs.length > 0 ? ` ${serializedArgs}` : ""}`;
 };
 
-export const isSubagentLocalHookInput = (input: ClaudeHookInput): boolean => {
+export const isSubagentLocalHookInput = (input: ClaudeHookInput) => {
   if (!input.agent_id) return false;
   return input.hook_event_name !== "SubagentStart" && input.hook_event_name !== "SubagentStop";
 };
 
-const shouldSkipHookForScope = (scope: HookAgentScope, input: ClaudeHookInput): boolean => {
+const shouldSkipHookForScope = (scope: HookAgentScope, input: ClaudeHookInput) => {
   if (scope === "all") return false;
   return isSubagentLocalHookInput(input);
 };
@@ -118,8 +118,7 @@ export const createHook = <E extends HookEventName>(options: CreateHookOptions<E
     type: "command",
     get command() {
       const metadata = internalHookCommandMetadata.get(hook);
-      const runtimeSource =
-        metadata?.source && metadata.source !== "mixed" ? metadata.source : undefined;
+      const runtimeSource = metadata?.source && metadata.source !== "mixed" ? metadata.source : undefined;
       return getRunnerCommand("hook", hookId, scope, ...(runtimeSource ? [runtimeSource] : []));
     },
     timeout,

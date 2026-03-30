@@ -18,7 +18,7 @@ export interface DiscoveryResult {
   errors: DiscoveryError[];
 }
 
-export const getDefaultPluginDirs = (launcherDir: string, projectRoot?: string): string[] => {
+export const getDefaultPluginDirs = (launcherDir: string, projectRoot?: string) => {
   const dirs: string[] = [];
 
   // built-in plugins
@@ -141,9 +141,7 @@ export const sortByDependencies = (plugins: DiscoveredPlugin[]): DiscoveredPlugi
   return sorted;
 };
 
-export const checkDependencies = (
-  plugins: DiscoveredPlugin[],
-): { missing: { plugin: string; dependency: string }[] } => {
+export const checkDependencies = (plugins: DiscoveredPlugin[]) => {
   const available = new Set(plugins.map((p) => p.manifest.name));
   const missing: { plugin: string; dependency: string }[] = [];
 

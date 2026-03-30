@@ -11,11 +11,11 @@ export interface PluginState {
   getAll: () => Record<string, unknown>;
 }
 
-const getSessionId = (): string => {
+const getSessionId = () => {
   return process.env.CCC_INSTANCE_ID ?? "unknown";
 };
 
-const getStatePath = (pluginName: string, cwd: string, stateType: StateType): string | null => {
+const getStatePath = (pluginName: string, cwd: string, stateType: StateType) => {
   if (stateType === "none") return null;
 
   switch (stateType) {
@@ -35,7 +35,7 @@ const getStatePath = (pluginName: string, cwd: string, stateType: StateType): st
   }
 };
 
-const ensureDir = (filePath: string): void => {
+const ensureDir = (filePath: string) => {
   const dir = dirname(filePath);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
@@ -53,12 +53,12 @@ const loadState = (path: string): Record<string, unknown> => {
   }
 };
 
-const saveState = (path: string, state: Record<string, unknown>): void => {
+const saveState = (path: string, state: Record<string, unknown>) => {
   ensureDir(path);
   writeFileSync(path, JSON.stringify(state, null, 2), "utf8");
 };
 
-const clearStateFile = (path: string): void => {
+const clearStateFile = (path: string) => {
   if (existsSync(path)) {
     try {
       unlinkSync(path);
@@ -87,14 +87,14 @@ export const createPluginState = (
       return state[key] as T | undefined;
     },
 
-    set: <T>(key: string, value: T): void => {
+    set: <T>(key: string, value: T) => {
       const state = getState();
       state[key] = value;
       cache = state;
       if (statePath) saveState(statePath, state);
     },
 
-    clear: (): void => {
+    clear: () => {
       cache = {};
       if (statePath) clearStateFile(statePath);
     },

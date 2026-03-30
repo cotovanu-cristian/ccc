@@ -172,21 +172,12 @@ describe("hook batching", () => {
     });
     asyncHook.async = true;
 
-    const asyncRewakeHook = createHook({
-      event: "PreToolUse",
-      id: "async-rewake-unbatchable",
-      batchable: true,
-      handler: () => undefined,
-    });
-    asyncRewakeHook.asyncRewake = true;
-
     expect(isBatchableInternalHookCommand(plainHook)).toBe(false);
     expect(isBatchableInternalHookCommand(batchableHook)).toBe(true);
     expect(isBatchableInternalHookCommand(timeoutHook)).toBe(false);
     expect(isBatchableInternalHookCommand(onceHook)).toBe(false);
     expect(isBatchableInternalHookCommand(statusMessageHook)).toBe(false);
     expect(isBatchableInternalHookCommand(asyncHook)).toBe(false);
-    expect(isBatchableInternalHookCommand(asyncRewakeHook)).toBe(false);
   });
 
   test("preserves main-scope filtering and matcher behavior in the batch runner", () => {

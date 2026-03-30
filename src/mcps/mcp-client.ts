@@ -43,7 +43,7 @@ const DEFAULT_RECONNECT_CONFIG: ReconnectConfig = {
   maxDelayMs: 30_000,
 };
 
-const isConnectionError = (error: Error): boolean => {
+const isConnectionError = (error: Error) => {
   const connectionErrors = [
     "ECONNREFUSED",
     "ECONNRESET",
@@ -56,7 +56,7 @@ const isConnectionError = (error: Error): boolean => {
   return connectionErrors.some((e) => error.message.includes(e));
 };
 
-const sleep = (ms: number): Promise<void> =>
+const sleep = (ms: number) =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
   });

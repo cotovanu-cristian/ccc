@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-export const ensureFileExists = (filePath: string): void => {
+export const ensureFileExists = (filePath: string) => {
   const dirPath = dirname(filePath);
 
   if (!existsSync(dirPath)) {
@@ -13,7 +13,7 @@ export const ensureFileExists = (filePath: string): void => {
   }
 };
 
-export const ensureDirectoryExists = (dirPath: string): void => {
+export const ensureDirectoryExists = (dirPath: string) => {
   if (!existsSync(dirPath)) {
     mkdirSync(dirPath, { recursive: true });
   }

@@ -17,7 +17,7 @@ export interface PluginContext<S = Record<string, unknown>> extends Context {
 
 const pluginContextRegistry = new Map<string, PluginContext>();
 
-export const registerPluginContext = (name: string, ctx: PluginContext): void => {
+export const registerPluginContext = (name: string, ctx: PluginContext) => {
   pluginContextRegistry.set(name, ctx);
 };
 
@@ -25,7 +25,7 @@ export const getPluginContext = (name: string): PluginContext | undefined => {
   return pluginContextRegistry.get(name);
 };
 
-export const clearPluginContextRegistry = (): void => {
+export const clearPluginContextRegistry = () => {
   pluginContextRegistry.clear();
 };
 

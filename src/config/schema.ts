@@ -5,14 +5,12 @@ export const agentDefinitionSchema = z.object({
   prompt: z.string(),
   tools: z.array(z.string()).optional(),
   disallowedTools: z.array(z.string()).optional(),
-  model: z.string().optional(),
+  model: z.enum(["sonnet", "opus", "haiku", "inherit"]).optional(),
   skills: z.array(z.string()).optional(),
   mcpServers: z.array(z.union([z.string(), z.record(z.string(), z.unknown())])).optional(),
   maxTurns: z.number().optional(),
   // critical reminder added to system prompt (v2.1.64)
   criticalSystemReminder_EXPERIMENTAL: z.string().optional(),
-  // auto-submitted as the first user turn when this agent is the main thread agent (v2.1.83)
-  initialPrompt: z.string().optional(),
 });
 
 export type AgentDefinition = z.infer<typeof agentDefinitionSchema>;
@@ -43,14 +41,12 @@ const marketplaceSourceSchema = z.discriminatedUnion("source", [
   z.object({
     source: z.literal("npm"),
     package: z.string(),
-    version: z.string().optional(),
-    registry: z.url().optional(),
   }),
   z.object({
     source: z.literal("pip"),
     package: z.string(),
     version: z.string().optional(),
-    registry: z.url().optional(),
+    registry: z.string().optional(),
   }),
   z.object({
     source: z.literal("file"),
@@ -63,24 +59,6 @@ const marketplaceSourceSchema = z.discriminatedUnion("source", [
   z.object({
     source: z.literal("hostPattern"),
     hostPattern: z.string(),
-  }),
-  z.object({
-    source: z.literal("git-subdir"),
-    url: z.string(),
-    path: z.string(),
-    ref: z.string().optional(),
-  }),
-  // regex path pattern matching for strict marketplace allowlists (v2.1.69)
-  z.object({
-    source: z.literal("pathPattern"),
-    pathPattern: z.string(),
-  }),
-  // inline marketplace manifest defined directly in settings.json (v2.1.80)
-  z.object({
-    source: z.literal("settings"),
-    name: z.string(),
-    plugins: z.array(z.record(z.string(), z.unknown())),
-    owner: z.record(z.string(), z.unknown()).optional(),
   }),
 ]);
 
@@ -106,9 +84,7 @@ export const settingsSchema = z.object({
       // additional working directories for Claude to access
       addDir: z.array(z.string()).optional(),
       // permission mode to start in: "default", "acceptEdits", "plan", "bypassPermissions"
-      permissionMode: z
-        .enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"])
-        .optional(),
+      permissionMode: z.enum(["default", "acceptEdits", "plan", "bypassPermissions", "dontAsk"]).optional(),
       // enable verbose logging
       verbose: z.boolean().optional(),
       // enable debug mode with optional category filter (e.g., "api,hooks" or "!statsig")
@@ -197,10 +173,6 @@ export const settingsSchema = z.object({
       tmux: z.union([z.boolean(), z.string()]).optional(),
       // thinking mode: enabled (= adaptive), adaptive, disabled (v2.1.61)
       thinking: z.enum(["enabled", "adaptive", "disabled"]).optional(),
-      // MCP servers whose channel notifications should register this session (v2.1.80)
-      channels: z.array(z.string()).optional(),
-      // load channel servers not on the approved allowlist; for local development only (v2.1.80)
-      dangerouslyLoadDevelopmentChannels: z.array(z.string()).optional(),
     })
     .optional(),
 
@@ -216,8 +188,6 @@ export const settingsSchema = z.object({
   autoUpdatesChannel: z.enum(["stable", "latest"]).optional(),
   // disable all hooks globally
   disableAllHooks: z.boolean().optional(),
-  // default shell for ! commands: bash (default) or powershell (v2.1.85)
-  defaultShell: z.enum(["bash", "powershell"]).optional(),
   // customize spinner verbs (v2.1.23)
   spinnerVerbs: z
     .object({
@@ -229,17 +199,11 @@ export const settingsSchema = z.object({
   fastMode: z.boolean().optional(),
   // per-session fast mode opt-in (v2.1.59)
   fastModePerSessionOptIn: z.boolean().optional(),
-  // effort level for Opus 4.6 adaptive reasoning: low, medium, high (default)
-  effortLevel: z.enum(["low", "medium", "high"]).optional(),
   // output style to adjust system prompt (e.g., "Explanatory")
   outputStyle: z.string().optional(),
-  // advisor model for server-side advisor tool (v2.1.85)
-  advisorModel: z.string().optional(),
 
   apiKeyHelper: z.string().optional(),
   awsAuthRefresh: z.string().optional(),
-  // command to refresh GCP authentication
-  gcpAuthRefresh: z.string().optional(),
   // script outputting JSON with AWS credentials
   awsCredentialExport: z.string().optional(),
   cleanupPeriodDays: z.number().optional(),
@@ -283,8 +247,6 @@ export const settingsSchema = z.object({
   pluginConfigs: z.record(z.string(), z.unknown()).optional(),
   // enable/disable auto-memory for the project (v2.1.51)
   autoMemoryEnabled: z.boolean().optional(),
-  // custom directory for storing auto-memory files (v2.1.74)
-  autoMemoryDirectory: z.string().optional(),
   // enable voice mode (hold Space to dictate) (v2.1.59)
   voiceEnabled: z.boolean().optional(),
   // skip confirmation dialog for dangerous mode (v2.1.59)
@@ -299,8 +261,6 @@ export const settingsSchema = z.object({
   minimumVersion: z.string().optional(),
   // allowlist of models users can select (v2.1.51)
   availableModels: z.array(z.string()).optional(),
-  // override mapping from Anthropic model ID to provider-specific model ID (v2.1.73)
-  modelOverrides: z.record(z.string(), z.string()).optional(),
   // glob patterns of CLAUDE.md files to exclude from loading (v2.1.51)
   claudeMdExcludes: z.array(z.string()).optional(),
   // remote session configuration (v2.1.51)
@@ -314,8 +274,6 @@ export const settingsSchema = z.object({
         sshHost: z.string(),
         sshPort: z.number().optional(),
         sshIdentityFile: z.string().optional(),
-        // default working directory on the remote host (v2.1.76)
-        startDirectory: z.string().optional(),
       }),
     )
     .optional(),
@@ -324,7 +282,7 @@ export const settingsSchema = z.object({
     .array(
       z.object({
         serverName: z.string().optional(),
-        serverCommand: z.array(z.string()).min(1).optional(),
+        serverCommand: z.string().optional(),
         serverUrl: z.string().optional(),
       }),
     )
@@ -334,7 +292,7 @@ export const settingsSchema = z.object({
     .array(
       z.object({
         serverName: z.string().optional(),
-        serverCommand: z.array(z.string()).min(1).optional(),
+        serverCommand: z.string().optional(),
         serverUrl: z.string().optional(),
       }),
     )
@@ -351,47 +309,7 @@ export const settingsSchema = z.object({
   blockedMarketplaces: z.array(marketplaceSourceSchema).optional(),
   // enterprise strict allowlist of marketplace sources (v2.1.61)
   strictKnownMarketplaces: z.array(marketplaceSourceSchema).optional(),
-  // rate (0-1) for session quality survey prompts; enterprise admins only (v2.1.76)
-  feedbackSurveyRate: z.number().min(0).max(1).optional(),
-  // control whether git commit/PR workflow instructions are included (v2.1.69)
-  includeGitInstructions: z.boolean().optional(),
-  // show thinking summaries in transcript view (ctrl+o) (v2.1.69)
-  showThinkingSummaries: z.boolean().optional(),
-  // organization-specific trust message shown in plugin dialogs (v2.1.69, managed settings)
-  pluginTrustMessage: z.string().optional(),
-  // whether user has accepted auto mode opt-in dialog (v2.1.71)
-  skipAutoPermissionPrompt: z.boolean().optional(),
-  // disable auto mode at top level (v2.1.71, managed settings)
-  disableAutoMode: z.enum(["disable"]).optional(),
-  // default transcript view: chat or transcript
-  defaultView: z.enum(["chat", "transcript"]).optional(),
-  // show "clear context" option in plan approval dialog (v2.1.81, default false)
-  showClearContextOnPlanAccept: z.boolean().optional(),
-  // enable background memory consolidation (auto-dream) (v2.1.81)
-  autoDreamEnabled: z.boolean().optional(),
-  // block non-plugin customization sources for listed surfaces (v2.1.81, managed settings)
-  strictPluginOnlyCustomization: z
-    .union([z.boolean(), z.array(z.enum(["skills", "agents", "hooks", "mcp"]))])
-    .optional(),
-  // opt-in for channel notifications from MCP servers (v2.1.81, managed settings)
-  channelsEnabled: z.boolean().optional(),
-  // admin-defined allowlist of channel plugins (v2.1.84, managed settings)
-  allowedChannelPlugins: z
-    .array(z.object({ marketplace: z.string(), plugin: z.string() }))
-    .optional(),
-  // prevent claude-cli:// protocol handler registration (v2.1.83)
-  disableDeepLinkRegistration: z.enum(["disable"]).optional(),
-  // whether plan mode uses auto mode semantics (v2.1.85, default true)
-  useAutoModeDuringPlan: z.boolean().optional(),
-  // auto mode classifier rules (v2.1.71)
-  autoMode: z
-    .object({
-      allow: z.array(z.string()).optional(),
-      soft_deny: z.array(z.string()).optional(),
-      environment: z.array(z.string()).optional(),
-    })
-    .optional(),
-  // name of a built-in or custom agent for the main thread (v2.1.85)
+  // name of an agent (built-in or custom) to use for the main thread
   agent: z.string().optional(),
 
   permissions: z
@@ -400,12 +318,8 @@ export const settingsSchema = z.object({
       deny: z.array(z.string()).optional(),
       ask: z.array(z.string()).optional(),
       additionalDirectories: z.array(z.string()).optional(),
-      defaultMode: z
-        .enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"])
-        .optional(),
+      defaultMode: z.enum(["default", "acceptEdits", "plan", "bypassPermissions", "dontAsk"]).optional(),
       disableBypassPermissionsMode: z.literal("disable").optional(),
-      // disable auto mode (v2.1.71, managed settings)
-      disableAutoMode: z.enum(["disable"]).optional(),
     })
     .optional(),
 
@@ -419,8 +333,6 @@ export const settingsSchema = z.object({
     .object({
       // directories to symlink from main repo to worktrees to avoid disk bloat
       symlinkDirectories: z.array(z.string()).optional(),
-      // directories to include via git sparse-checkout for large monorepos (v2.1.76)
-      sparsePaths: z.array(z.string()).optional(),
     })
     .optional(),
 
@@ -448,10 +360,6 @@ export const settingsSchema = z.object({
           allowWrite: z.array(z.string()).optional(),
           denyWrite: z.array(z.string()).optional(),
           denyRead: z.array(z.string()).optional(),
-          // re-allow read access within denyRead regions (v2.1.77)
-          allowRead: z.array(z.string()).optional(),
-          // when true in managed settings, only managed allowRead paths apply (v2.1.77)
-          allowManagedReadPathsOnly: z.boolean().optional(),
         })
         .optional(),
       // selectively ignore sandbox violations by process/pattern (v2.1.61)
@@ -461,18 +369,22 @@ export const settingsSchema = z.object({
       enableWeakerNestedSandbox: z.boolean().optional(),
       // weaker network isolation for sandbox (v2.1.64)
       enableWeakerNetworkIsolation: z.boolean().optional(),
-      // exit with error when sandbox is enabled but cannot start (v2.1.83)
-      failIfUnavailable: z.boolean().optional(),
     })
     .optional(),
 
-  // runtime string patches applied to claude cli
+  // runtime patches applied to claude cli
   patches: z
     .array(
-      z.object({
-        find: z.string(),
-        replace: z.string(),
-      }),
+      z.union([
+        z.object({ find: z.string(), replace: z.string() }),
+        z.object({
+          fn: z
+            .function()
+            .input(z.tuple([z.string()]))
+            .output(z.string()),
+          name: z.string(),
+        }),
+      ]),
     )
     .optional(),
 

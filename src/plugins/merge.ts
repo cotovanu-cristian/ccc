@@ -18,7 +18,7 @@ export const mergePluginConfigs = (
   return result;
 };
 
-export const getEnabledPluginNames = (config: PluginEnablementConfig): string[] => {
+export const getEnabledPluginNames = (config: PluginEnablementConfig) => {
   const enabled: string[] = [];
 
   for (const [name, value] of Object.entries(config)) {

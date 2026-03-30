@@ -67,7 +67,7 @@ const setupTestEnvironment = (configFixture: string): TestConfigPaths => {
   return { testId, configDir };
 };
 
-const cleanupTestEnvironment = (testId: string): void => {
+const cleanupTestEnvironment = (testId: string) => {
   const testDir = join(TEST_CONFIG_BASE, testId);
   if (existsSync(testDir)) {
     rmSync(testDir, { recursive: true });
@@ -151,7 +151,7 @@ export const runCCC = async (options: RunCCCOptions): Promise<RunCCCResult> => {
   });
 };
 
-export const getFixturePath = (type: "configs" | "projects", name: string): string => {
+export const getFixturePath = (type: "configs" | "projects", name: string) => {
   return join(FIXTURES_DIR, type, name);
 };
 

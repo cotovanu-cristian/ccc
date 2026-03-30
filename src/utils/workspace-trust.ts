@@ -20,7 +20,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 };
 
-const normalizeWorkspacePath = (workspacePath: string): string => {
+const normalizeWorkspacePath = (workspacePath: string) => {
   const resolved = resolve(workspacePath);
   try {
     return realpathSync.native?.(resolved) ?? realpathSync(resolved);
@@ -29,7 +29,7 @@ const normalizeWorkspacePath = (workspacePath: string): string => {
   }
 };
 
-const getClaudeStatePath = (homeDirectory = homedir()): string => {
+const getClaudeStatePath = (homeDirectory = homedir()) => {
   return join(homeDirectory, ".claude.json");
 };
 

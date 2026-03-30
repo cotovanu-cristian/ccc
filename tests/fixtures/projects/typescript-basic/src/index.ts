@@ -1,4 +1,4 @@
-export const hello = (name: string): string => {
+export const hello = (name: string) => {
   return `Hello, ${name}!`;
 };
 

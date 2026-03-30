@@ -12,20 +12,6 @@ const builtins: BuiltinCommands = {
     batchable: true,
     handler: eventRecorder.record,
   }),
-  CwdChanged: createHook({
-    event: "CwdChanged",
-    id: "builtin-recorder",
-    source: "builtin",
-    batchable: true,
-    handler: eventRecorder.record,
-  }),
-  FileChanged: createHook({
-    event: "FileChanged",
-    id: "builtin-recorder",
-    source: "builtin",
-    batchable: true,
-    handler: eventRecorder.record,
-  }),
   Notification: createHook({
     event: "Notification",
     id: "builtin-recorder",
@@ -49,13 +35,6 @@ const builtins: BuiltinCommands = {
   }),
   PostToolUseFailure: createHook({
     event: "PostToolUseFailure",
-    id: "builtin-recorder",
-    source: "builtin",
-    batchable: true,
-    handler: eventRecorder.record,
-  }),
-  PostCompact: createHook({
-    event: "PostCompact",
     id: "builtin-recorder",
     source: "builtin",
     batchable: true,
@@ -103,13 +82,6 @@ const builtins: BuiltinCommands = {
     batchable: true,
     handler: eventRecorder.record,
   }),
-  StopFailure: createHook({
-    event: "StopFailure",
-    id: "builtin-recorder",
-    source: "builtin",
-    batchable: true,
-    handler: eventRecorder.record,
-  }),
   SubagentStart: createHook({
     event: "SubagentStart",
     id: "builtin-recorder",
@@ -126,13 +98,6 @@ const builtins: BuiltinCommands = {
   }),
   TaskCompleted: createHook({
     event: "TaskCompleted",
-    id: "builtin-recorder",
-    source: "builtin",
-    batchable: true,
-    handler: eventRecorder.record,
-  }),
-  TaskCreated: createHook({
-    event: "TaskCreated",
     id: "builtin-recorder",
     source: "builtin",
     batchable: true,
@@ -161,13 +126,6 @@ const builtins: BuiltinCommands = {
   }),
   WorktreeRemove: createHook({
     event: "WorktreeRemove",
-    id: "builtin-recorder",
-    source: "builtin",
-    batchable: true,
-    handler: eventRecorder.record,
-  }),
-  InstructionsLoaded: createHook({
-    event: "InstructionsLoaded",
     id: "builtin-recorder",
     source: "builtin",
     batchable: true,

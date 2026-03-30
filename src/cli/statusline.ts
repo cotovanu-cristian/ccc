@@ -9,7 +9,7 @@ import { resolveConfigDirectoryPath } from "@/utils/config-directory";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const resolveConfigDirectory = (launcherRoot: string): string => {
+const resolveConfigDirectory = (launcherRoot: string) => {
   const override = process.env.CCC_CONFIG_DIR?.trim();
   if (override) {
     const configBase = resolveConfigDirectoryPath(launcherRoot, override);

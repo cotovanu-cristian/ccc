@@ -50,11 +50,11 @@ const mergePluginsConfig = (...layers: (PluginsConfig | undefined)[]): PluginsCo
   };
 };
 
-const resolvePluginDirs = (configBase: string, pluginDirs: string[]): string[] => {
+const resolvePluginDirs = (configBase: string, pluginDirs: string[]) => {
   return pluginDirs.map((dir) => (isAbsolute(dir) ? resolve(dir) : resolve(configBase, dir)));
 };
 
-const discoverClaudePluginDirs = (configBase: string): string[] => {
+const discoverClaudePluginDirs = (configBase: string) => {
   const discovered: string[] = [];
   const root = join(configBase, "claude-plugins");
   if (!existsSync(root)) return discovered;
@@ -88,7 +88,7 @@ const discoverClaudePluginDirs = (configBase: string): string[] => {
   return discovered;
 };
 
-const uniq = (values: string[]): string[] => {
+const uniq = (values: string[]) => {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const value of values) {

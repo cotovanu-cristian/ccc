@@ -12,9 +12,9 @@ import { log } from "@/utils/log";
 const SKILL_MD = "SKILL.md";
 const SKILL_TS = "SKILL.ts";
 
-const toPosixPath = (value: string): string => value.split("\\").join("/");
+const toPosixPath = (value: string) => value.split("\\").join("/");
 
-const normalizeRelativePath = (value: string): string | null => {
+const normalizeRelativePath = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return null;
 
@@ -55,7 +55,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isScalar = (value: unknown): value is boolean | number | string | null =>
   value === null || ["boolean", "number", "string"].includes(typeof value);
 
-const renderYamlScalar = (value: boolean | number | string | null): string => {
+const renderYamlScalar = (value: boolean | number | string | null) => {
   if (value === null) return "null";
   if (typeof value === "string") return JSON.stringify(value);
   return String(value);
@@ -108,7 +108,7 @@ const renderYamlValue = (value: unknown, indent: number): string[] => {
   return [`${pad}${JSON.stringify(String(value))}`];
 };
 
-const renderFrontmatter = (data: Record<string, unknown>): string => {
+const renderFrontmatter = (data: Record<string, unknown>) => {
   const lines = renderYamlValue(data, 0);
   return lines.join("\n");
 };

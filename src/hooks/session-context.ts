@@ -6,7 +6,7 @@ export interface SessionContext {
   events: readonly RecordedEvent[];
 }
 
-const extractSessionId = (events: readonly RecordedEvent[]): string | null => {
+const extractSessionId = (events: readonly RecordedEvent[]) => {
   const sessionStart = events.find((e) => e.hook_event_name === "SessionStart");
   return sessionStart?.session_id || null;
 };

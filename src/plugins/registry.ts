@@ -2,7 +2,7 @@ import type { HooksConfiguration } from "@/types/hooks";
 import type { MCPServers } from "@/types/mcps";
 import type { AgentConfig, CommandConfig, LoadedPlugin, PluginInfo, PromptConfig } from "./types";
 
-const namespace = (pluginName: string, componentName: string): string => {
+const namespace = (pluginName: string, componentName: string) => {
   return `${pluginName}:${componentName}`;
 };
 
@@ -70,9 +70,7 @@ export const getPluginHooks = (plugins: LoadedPlugin[]): HooksConfiguration => {
   return hooks;
 };
 
-export const getPluginPrompts = (
-  plugins: LoadedPlugin[],
-): { system: PromptConfig[]; user: PromptConfig[] } => {
+export const getPluginPrompts = (plugins: LoadedPlugin[]) => {
   const system: PromptConfig[] = [];
   const user: PromptConfig[] = [];
 

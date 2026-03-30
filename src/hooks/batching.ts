@@ -4,13 +4,7 @@ import {
   type HookBatchCommandEntry,
   type HookBatchCommandSource,
 } from "@/hooks/hook-generator";
-import type {
-  ClaudeHookInput,
-  HookCommand,
-  HookDefinition,
-  HookEntry,
-  HookMatcherType,
-} from "@/types/hooks";
+import type { ClaudeHookInput, HookCommand, HookDefinition, HookEntry, HookMatcherType } from "@/types/hooks";
 
 export interface SourcedHookDefinition extends HookDefinition {
   source: HookBatchCommandSource;
@@ -40,7 +34,7 @@ const appendMatcher = (entry: HookBatchCommandEntry, matcher: HookMatcherType | 
   }
 };
 
-const getHookMatcherQuery = (input: ClaudeHookInput): string | undefined => {
+const getHookMatcherQuery = (input: ClaudeHookInput) => {
   switch (input.hook_event_name) {
     case "ConfigChange": {
       return input.source;
@@ -51,17 +45,11 @@ const getHookMatcherQuery = (input: ClaudeHookInput): string | undefined => {
     case "ElicitationResult": {
       return input.mcp_server_name;
     }
-    case "InstructionsLoaded": {
-      return input.load_reason;
-    }
     case "Notification": {
       return input.notification_type;
     }
     case "PermissionRequest": {
       return input.tool_name;
-    }
-    case "PostCompact": {
-      return input.trigger;
     }
     case "PostToolUse": {
       return input.tool_name;
@@ -84,9 +72,6 @@ const getHookMatcherQuery = (input: ClaudeHookInput): string | undefined => {
     case "Setup": {
       return input.trigger;
     }
-    case "StopFailure": {
-      return input.error;
-    }
     case "SubagentStart": {
       return input.agent_type;
     }
@@ -99,7 +84,7 @@ const getHookMatcherQuery = (input: ClaudeHookInput): string | undefined => {
   }
 };
 
-const doesSingleMatcherMatch = (query: string, matcher: HookMatcherType): boolean => {
+const doesSingleMatcherMatch = (query: string, matcher: HookMatcherType) => {
   if (matcher === "*") return true;
 
   if (SIMPLE_MATCHER_RE.test(matcher)) {
@@ -130,8 +115,7 @@ export const isBatchableInternalHookCommand = (entry: HookEntry): entry is HookC
     entry.timeout == null &&
     entry.statusMessage == null &&
     entry.once !== true &&
-    entry.async !== true &&
-    entry.asyncRewake !== true
+    entry.async !== true
   );
 };
 
@@ -187,10 +171,7 @@ export const batchHookDefinitionsForEvent = (definitions: SourcedHookDefinition[
   return [{ hooks: [createHookBatchCommand(Array.from(batchEntries.values()))] }, ...preservedDefinitions];
 };
 
-export const doesHookBatchEntryMatchInput = (
-  entry: HookBatchCommandEntry,
-  input: ClaudeHookInput,
-): boolean => {
+export const doesHookBatchEntryMatchInput = (entry: HookBatchCommandEntry, input: ClaudeHookInput) => {
   const query = getHookMatcherQuery(input);
 
   if (

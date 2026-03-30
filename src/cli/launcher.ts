@@ -25,11 +25,11 @@ import { buildTrustedClaudeState } from "@/utils/workspace-trust";
 
 type ResolveResult = { path: string; source: string };
 
-const hasLongFlag = (args: string[], flag: string): boolean => {
+const hasLongFlag = (args: string[], flag: string) => {
   return args.some((arg) => arg === flag || arg.startsWith(`${flag}=`));
 };
 
-const getLongFlagValue = (args: string[], flag: string): string | undefined => {
+const getLongFlagValue = (args: string[], flag: string) => {
   const eqPrefix = `${flag}=`;
 
   for (let i = args.length - 1; i >= 0; i -= 1) {

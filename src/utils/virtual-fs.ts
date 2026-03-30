@@ -67,7 +67,7 @@ const initializePathMappings = () => {
   mappingsInitialized = true;
 };
 
-const mapToVirtualPath = (filePath: string): string | undefined => {
+const mapToVirtualPath = (filePath: string) => {
   initializePathMappings();
 
   const normalized = path.normalize(path.resolve(filePath));
@@ -108,14 +108,14 @@ const monkeyPatchFS = ({
   const normalizedSkillsPath = skillsPath ? path.normalize(path.resolve(skillsPath)) : undefined;
   const normalizedRulesPath = rulesPath ? path.normalize(path.resolve(rulesPath)) : undefined;
 
-  const normalizeArgPath = (arg: string): string => {
+  const normalizeArgPath = (arg: string) => {
     if (arg.startsWith(`~${path.sep}`)) {
       return path.join(os.homedir(), arg.slice(2));
     }
     return arg;
   };
 
-  const isSkillsRootArg = (arg: string): boolean => {
+  const isSkillsRootArg = (arg: string) => {
     if (!normalizedSkillsPath) return false;
     const normalized = path.normalize(path.resolve(normalizeArgPath(arg)));
     return normalized === normalizedSkillsPath;
@@ -137,7 +137,7 @@ const monkeyPatchFS = ({
     );
   };
 
-  const markVirtualFileHandle = (handle: FileHandle, virtualPath: string): void => {
+  const markVirtualFileHandle = (handle: FileHandle, virtualPath: string) => {
     (handle as MaybeVirtualFileHandle)[virtualFileHandleSymbol] = { path: virtualPath };
   };
 
@@ -159,7 +159,7 @@ const monkeyPatchFS = ({
     return vol.readFileSync(virtualPath, options as Parameters<typeof vol.readFileSync>[1]);
   };
 
-  const isCommandsPath = (filePath: unknown): boolean => {
+  const isCommandsPath = (filePath: unknown) => {
     if (!normalizedCommandsPath || typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const result =
@@ -170,7 +170,7 @@ const monkeyPatchFS = ({
     return result;
   };
 
-  const isCommandsChild = (filePath: unknown): boolean => {
+  const isCommandsChild = (filePath: unknown) => {
     if (!normalizedCommandsPath || typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const result = normalized.startsWith(normalizedCommandsPath + path.sep);
@@ -178,7 +178,7 @@ const monkeyPatchFS = ({
     return result;
   };
 
-  const isAgentsPath = (filePath: unknown): boolean => {
+  const isAgentsPath = (filePath: unknown) => {
     if (!normalizedAgentsPath || typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const result =
@@ -189,7 +189,7 @@ const monkeyPatchFS = ({
     return result;
   };
 
-  const isAgentsChild = (filePath: unknown): boolean => {
+  const isAgentsChild = (filePath: unknown) => {
     if (!normalizedAgentsPath || typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const result = normalized.startsWith(normalizedAgentsPath + path.sep);
@@ -197,7 +197,7 @@ const monkeyPatchFS = ({
     return result;
   };
 
-  const isSkillsPath = (filePath: unknown): boolean => {
+  const isSkillsPath = (filePath: unknown) => {
     if (!normalizedSkillsPath || typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const result =
@@ -208,7 +208,7 @@ const monkeyPatchFS = ({
     return result;
   };
 
-  const isSkillsChild = (filePath: unknown): boolean => {
+  const isSkillsChild = (filePath: unknown) => {
     if (!normalizedSkillsPath || typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const result = normalized.startsWith(normalizedSkillsPath + path.sep);
@@ -216,7 +216,7 @@ const monkeyPatchFS = ({
     return result;
   };
 
-  const isRulesPath = (filePath: unknown): boolean => {
+  const isRulesPath = (filePath: unknown) => {
     if (!normalizedRulesPath || typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const result =
@@ -227,7 +227,7 @@ const monkeyPatchFS = ({
     return result;
   };
 
-  const isRulesChild = (filePath: unknown): boolean => {
+  const isRulesChild = (filePath: unknown) => {
     if (!normalizedRulesPath || typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const result = normalized.startsWith(normalizedRulesPath + path.sep);
@@ -235,7 +235,7 @@ const monkeyPatchFS = ({
     return result;
   };
 
-  const isVirtualRoot = (filePath: string): boolean => {
+  const isVirtualRoot = (filePath: string) => {
     const normalized = path.normalize(path.resolve(filePath));
     for (const root of virtualRoots) {
       if (normalized === root || normalized.startsWith(root + path.sep)) return true;
@@ -243,7 +243,7 @@ const monkeyPatchFS = ({
     return false;
   };
 
-  const resolveVirtualPath = (filePath: string): string | undefined => {
+  const resolveVirtualPath = (filePath: string) => {
     if (
       isCommandsPath(filePath) ||
       isCommandsChild(filePath) ||
@@ -262,7 +262,7 @@ const monkeyPatchFS = ({
     return undefined;
   };
 
-  const gatherVirtualCandidates = (filePath: string): string[] => {
+  const gatherVirtualCandidates = (filePath: string) => {
     const candidates = new Set<string>();
     const resolved = path.normalize(path.resolve(filePath));
     const direct = resolveVirtualPath(resolved);
@@ -688,7 +688,7 @@ const monkeyPatchFS = ({
     }
   } as typeof fsDefault.opendir;
 
-  const isProtectedPath = (filePath: unknown): boolean => {
+  const isProtectedPath = (filePath: unknown) => {
     if (typeof filePath !== "string") return false;
     const normalized = path.normalize(path.resolve(filePath));
     const homeDir = os.homedir();
@@ -1293,7 +1293,8 @@ const monkeyPatchFS = ({
 
     const descriptor = Object.getOwnPropertyDescriptor(fsDefault, method);
     if (!descriptor || !("value" in descriptor) || !descriptor.writable) {
-      if (descriptor?.get && !descriptor.set) log.vfs(`Skipping accessor-only fs.${method} during monkey patch`);
+      if (descriptor?.get && !descriptor.set)
+        {log.vfs(`Skipping accessor-only fs.${method} during monkey patch`);}
       continue;
     }
 
@@ -1389,7 +1390,7 @@ const monkeyPatchFS = ({
           virtualFile.position = 0;
         }
 
-        const toInt = (value: unknown, name: string): number => {
+        const toInt = (value: unknown, name: string) => {
           if (typeof value !== "number" || !Number.isFinite(value)) {
             throw new TypeError(`${name} must be a finite number`);
           }
@@ -1775,7 +1776,7 @@ export const setupVirtualFileSystem = (args: {
   rules?: Map<string, string>;
   workingDirectory?: string;
   disableParentClaudeMds?: boolean;
-}): void => {
+}) => {
   const claudeStatePath = path.join(os.homedir(), ".claude.json");
   const settingsJsonPath = path.join(os.homedir(), ".claude", "settings.json");
   const claudeMdPath = path.join(os.homedir(), ".claude", "CLAUDE.md");

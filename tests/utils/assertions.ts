@@ -1,27 +1,27 @@
 import { expect } from "bun:test";
 
-export const assertExitCode = (actual: number, expected: number): void => {
+export const assertExitCode = (actual: number, expected: number) => {
   expect(actual).toBe(expected);
 };
 
-export const assertStdoutContains = (stdout: string, content: string): void => {
+export const assertStdoutContains = (stdout: string, content: string) => {
   expect(stdout).toContain(content);
 };
 
-export const assertStdoutNotContains = (stdout: string, content: string): void => {
+export const assertStdoutNotContains = (stdout: string, content: string) => {
   expect(stdout).not.toContain(content);
 };
 
-export const assertStderrEmpty = (stderr: string): void => {
+export const assertStderrEmpty = (stderr: string) => {
   // allow empty or only whitespace
   expect(stderr.trim()).toBe("");
 };
 
-export const assertStderrContains = (stderr: string, content: string): void => {
+export const assertStderrContains = (stderr: string, content: string) => {
   expect(stderr).toContain(content);
 };
 
-export const assertConfigContains = (stdout: string, key: string, value: unknown): void => {
+export const assertConfigContains = (stdout: string, key: string, value: unknown) => {
   // parse the settings JSON from --print-config output
   const settingsMatch = /Settings:\s*\n([\S\s]*?)(?=\n.*?:|\n\n|$)/.exec(stdout);
   if (!settingsMatch) {
@@ -62,15 +62,15 @@ export const assertConfigContains = (stdout: string, key: string, value: unknown
   expect(current).toEqual(value);
 };
 
-export const assertSystemPromptContains = (stdout: string, content: string): void => {
+export const assertSystemPromptContains = (stdout: string, content: string) => {
   expect(stdout).toContain(content);
 };
 
-export const assertUserPromptContains = (stdout: string, content: string): void => {
+export const assertUserPromptContains = (stdout: string, content: string) => {
   expect(stdout).toContain(content);
 };
 
-export const assertCommandsInclude = (stdout: string, commandName: string): void => {
+export const assertCommandsInclude = (stdout: string, commandName: string) => {
   // look for commands array in --print-config output
   const commandsMatch = /Commands:\s*\n\s*\[([\S\s]*?)]/.exec(stdout);
   if (!commandsMatch) {
@@ -79,7 +79,7 @@ export const assertCommandsInclude = (stdout: string, commandName: string): void
   expect(commandsMatch[1]).toContain(commandName);
 };
 
-export const assertAgentsInclude = (stdout: string, agentName: string): void => {
+export const assertAgentsInclude = (stdout: string, agentName: string) => {
   // look for agents array in --print-config output
   const agentsMatch = /Agents:\s*\n\s*\[([\S\s]*?)]/.exec(stdout);
   if (!agentsMatch) {
@@ -88,7 +88,7 @@ export const assertAgentsInclude = (stdout: string, agentName: string): void => 
   expect(agentsMatch[1]).toContain(agentName);
 };
 
-export const assertPresetMatched = (stdout: string, presetName: string): void => {
+export const assertPresetMatched = (stdout: string, presetName: string) => {
   // look for preset in context output
   expect(stdout).toContain(presetName);
 };
