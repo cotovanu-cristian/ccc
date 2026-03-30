@@ -45,11 +45,17 @@ const getHookMatcherQuery = (input: ClaudeHookInput) => {
     case "ElicitationResult": {
       return input.mcp_server_name;
     }
+    case "InstructionsLoaded": {
+      return input.load_reason;
+    }
     case "Notification": {
       return input.notification_type;
     }
     case "PermissionRequest": {
       return input.tool_name;
+    }
+    case "PostCompact": {
+      return input.trigger;
     }
     case "PostToolUse": {
       return input.tool_name;
@@ -71,6 +77,9 @@ const getHookMatcherQuery = (input: ClaudeHookInput) => {
     }
     case "Setup": {
       return input.trigger;
+    }
+    case "StopFailure": {
+      return input.error;
     }
     case "SubagentStart": {
       return input.agent_type;
@@ -115,7 +124,8 @@ export const isBatchableInternalHookCommand = (entry: HookEntry): entry is HookC
     entry.timeout == null &&
     entry.statusMessage == null &&
     entry.once !== true &&
-    entry.async !== true
+    entry.async !== true &&
+    entry.asyncRewake !== true
   );
 };
 

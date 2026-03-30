@@ -1,9 +1,13 @@
 export type HookEventName =
   | "ConfigChange"
+  | "CwdChanged"
   | "Elicitation"
   | "ElicitationResult"
+  | "FileChanged"
+  | "InstructionsLoaded"
   | "Notification"
   | "PermissionRequest"
+  | "PostCompact"
   | "PostToolUse"
   | "PostToolUseFailure"
   | "PreCompact"
@@ -12,9 +16,11 @@ export type HookEventName =
   | "SessionStart"
   | "Setup"
   | "Stop"
+  | "StopFailure"
   | "SubagentStart"
   | "SubagentStop"
   | "TaskCompleted"
+  | "TaskCreated"
   | "TeammateIdle"
   | "UserPromptSubmit"
   | "WorktreeCreate"
@@ -22,15 +28,20 @@ export type HookEventName =
 
 export type HookMatcherType =
   | ({} & string)
+  | "Agent"
   | "AskUserQuestion"
   | "auto"
   | "Bash"
   | "clear"
   | "compact"
+  | "CronCreate"
+  | "CronDelete"
+  | "CronList"
   | "Edit"
   | "EnterPlanMode"
   | "EnterWorktree"
   | "ExitPlanMode"
+  | "ExitWorktree"
   | "Glob"
   | "Grep"
   | "LSP"
@@ -38,8 +49,10 @@ export type HookMatcherType =
   | "MultiEdit"
   | "NotebookEdit"
   | "NotebookRead"
+  | "PowerShell"
   | "Read"
   | "resume"
+  | "SendMessage"
   | "Skill"
   | "startup"
   | "Task"
@@ -58,12 +71,19 @@ export type HookMatcherType =
 export interface HookCommand {
   type: "command";
   command: string;
+  // shell interpreter: 'bash' uses $SHELL, 'powershell' uses pwsh (v2.1.81)
+  shell?: "bash" | "powershell";
   timeout?: number;
   once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
+  // only evaluated for PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest
+  if?: string;
   // custom spinner status message while hook runs (v2.1.63)
   statusMessage?: string;
   // run in background without blocking (v2.1.63)
   async?: boolean;
+  // run in background, wake model on exit code 2 (blocking error); implies async (v2.1.64)
+  asyncRewake?: boolean;
 }
 
 export interface HookPrompt {
@@ -71,6 +91,8 @@ export interface HookPrompt {
   prompt: string;
   timeout?: number;
   once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
+  if?: string;
   // model to use for prompt evaluation (v2.1.63)
   model?: string;
   // custom spinner status message while hook runs (v2.1.63)
@@ -83,6 +105,8 @@ export interface HookHttp {
   url: string;
   timeout?: number;
   once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
+  if?: string;
   // additional request headers; values support $VAR_NAME interpolation (v2.1.63)
   headers?: Record<string, string>;
   // env vars allowed to be interpolated in header values (v2.1.63)
@@ -97,6 +121,8 @@ export interface HookAgent {
   prompt: string;
   timeout?: number;
   once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
+  if?: string;
   // model to use for agent hook (v2.1.63)
   model?: string;
   // custom spinner status message while hook runs (v2.1.63)
@@ -112,7 +138,7 @@ export interface HookDefinition {
 
 export type HooksConfiguration = Partial<Record<HookEventName, HookDefinition[]>>;
 
-export type PermissionMode = "acceptEdits" | "bypassPermissions" | "default" | "dontAsk" | "plan";
+export type PermissionMode = "acceptEdits" | "auto" | "bypassPermissions" | "default" | "dontAsk" | "plan";
 
 interface BaseHookInput {
   session_id: string;
@@ -164,13 +190,30 @@ export interface SessionStartHookInput extends BaseHookInput {
 
 export interface SessionEndHookInput extends BaseHookInput {
   hook_event_name: "SessionEnd";
-  reason: "bypass_permissions_disabled" | "clear" | "logout" | "other" | "prompt_input_exit";
+  reason: "bypass_permissions_disabled" | "clear" | "logout" | "other" | "prompt_input_exit" | "resume";
 }
 
 export interface StopHookInput extends BaseHookInput {
   hook_event_name: "Stop";
   stop_hook_active: boolean;
   // text content of the last assistant message before stopping (v2.1.47)
+  last_assistant_message?: string;
+}
+
+export type StopFailureError =
+  | "authentication_failed"
+  | "billing_error"
+  | "invalid_request"
+  | "max_output_tokens"
+  | "rate_limit"
+  | "server_error"
+  | "unknown";
+
+// fires when a turn ends due to an API error; fire-and-forget (v2.1.78)
+export interface StopFailureHookInput extends BaseHookInput {
+  hook_event_name: "StopFailure";
+  error: StopFailureError;
+  error_details?: string;
   last_assistant_message?: string;
 }
 
@@ -184,8 +227,16 @@ export interface SubagentStopHookInput extends BaseHookInput {
   last_assistant_message?: string;
 }
 
-// 2.1.68 accepts any string here; built-in values are not exhaustively schema-validated.
-export type NotificationType = string;
+export type NotificationType =
+  | ({} & string)
+  | "auth_success"
+  | "elicitation_complete"
+  | "elicitation_dialog"
+  | "elicitation_response"
+  | "idle_prompt"
+  | "permission_prompt"
+  // teammate permission prompt forwarded from a worker (v2.1.65)
+  | "worker_permission_prompt";
 
 export interface NotificationHookInput extends BaseHookInput {
   hook_event_name: "Notification";
@@ -198,6 +249,12 @@ export interface PreCompactHookInput extends BaseHookInput {
   hook_event_name: "PreCompact";
   trigger: "auto" | "manual";
   custom_instructions: string | null;
+}
+
+export interface PostCompactHookInput extends BaseHookInput {
+  hook_event_name: "PostCompact";
+  trigger: "auto" | "manual";
+  compact_summary: string;
 }
 
 export interface SetupHookInput extends BaseHookInput {
@@ -226,6 +283,16 @@ export interface TaskCompletedHookInput extends BaseHookInput {
   team_name?: string;
 }
 
+// fires when a task is created via TaskCreate (v2.1.84)
+export interface TaskCreatedHookInput extends BaseHookInput {
+  hook_event_name: "TaskCreated";
+  task_id: string;
+  task_subject: string;
+  task_description?: string;
+  teammate_name?: string;
+  team_name?: string;
+}
+
 export interface ConfigChangeHookInput extends BaseHookInput {
   hook_event_name: "ConfigChange";
   source: "local_settings" | "policy_settings" | "project_settings" | "skills" | "user_settings";
@@ -240,6 +307,41 @@ export interface WorktreeCreateHookInput extends BaseHookInput {
 export interface WorktreeRemoveHookInput extends BaseHookInput {
   hook_event_name: "WorktreeRemove";
   worktree_path: string;
+}
+
+// reactive environment management hooks (v2.1.83)
+export interface CwdChangedHookInput extends BaseHookInput {
+  hook_event_name: "CwdChanged";
+  old_cwd: string;
+  new_cwd: string;
+}
+
+export interface FileChangedHookInput extends BaseHookInput {
+  hook_event_name: "FileChanged";
+  file_path: string;
+  event: "add" | "change" | "unlink";
+}
+
+export type InstructionsMemoryType = "Local" | "Managed" | "Project" | "User";
+
+export type InstructionsLoadReason =
+  | "compact"
+  | "include"
+  | "nested_traversal"
+  | "path_glob_match"
+  | "session_start";
+
+export interface InstructionsLoadedHookInput extends BaseHookInput {
+  hook_event_name: "InstructionsLoaded";
+  file_path: string;
+  memory_type: InstructionsMemoryType;
+  load_reason: InstructionsLoadReason;
+  // glob patterns from paths: frontmatter that matched (v2.1.64)
+  globs?: string[];
+  // file Claude touched that caused the load (v2.1.64)
+  trigger_file_path?: string;
+  // file that @-included this one (v2.1.64)
+  parent_file_path?: string;
 }
 
 export interface ElicitationHookInput extends BaseHookInput {
@@ -273,10 +375,14 @@ export interface PostToolUseFailureHookInput extends BaseHookInput {
 
 export type ClaudeHookInput =
   | ConfigChangeHookInput
+  | CwdChangedHookInput
   | ElicitationHookInput
   | ElicitationResultHookInput
+  | FileChangedHookInput
+  | InstructionsLoadedHookInput
   | NotificationHookInput
   | PermissionRequestHookInput
+  | PostCompactHookInput
   | PostToolUseFailureHookInput
   | PostToolUseHookInput
   | PreCompactHookInput
@@ -284,10 +390,12 @@ export type ClaudeHookInput =
   | SessionEndHookInput
   | SessionStartHookInput
   | SetupHookInput
+  | StopFailureHookInput
   | StopHookInput
   | SubagentStartHookInput
   | SubagentStopHookInput
   | TaskCompletedHookInput
+  | TaskCreatedHookInput
   | TeammateIdleHookInput
   | UserPromptSubmitHookInput
   | WorktreeCreateHookInput
@@ -356,6 +464,9 @@ export interface SessionStartHookResponse extends BaseHookResponse {
   hookSpecificOutput?: {
     hookEventName: "SessionStart";
     additionalContext?: string;
+    initialUserMessage?: string;
+    // absolute paths to watch for FileChanged hooks (v2.1.83)
+    watchPaths?: string[];
   };
 }
 
@@ -363,6 +474,9 @@ export interface StopHookResponse extends BaseHookResponse {
   decision?: "block";
   reason?: string;
 }
+
+// fire-and-forget — hook output and exit codes are ignored (v2.1.78)
+export interface StopFailureHookResponse extends BaseHookResponse {}
 
 export interface SubagentStopHookResponse extends BaseHookResponse {
   decision?: "block";
@@ -377,6 +491,8 @@ export interface NotificationHookResponse extends BaseHookResponse {
 }
 
 export interface PreCompactHookResponse extends BaseHookResponse {}
+
+export interface PostCompactHookResponse extends BaseHookResponse {}
 
 export interface SessionEndHookResponse extends BaseHookResponse {}
 
@@ -405,11 +521,38 @@ export interface TeammateIdleHookResponse extends BaseHookResponse {}
 
 export interface TaskCompletedHookResponse extends BaseHookResponse {}
 
+// fire-and-forget (v2.1.84)
+export interface TaskCreatedHookResponse extends BaseHookResponse {}
+
 export interface ConfigChangeHookResponse extends BaseHookResponse {}
 
-export interface WorktreeCreateHookResponse extends BaseHookResponse {}
+export interface WorktreeCreateHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "WorktreeCreate";
+    // returned by http hooks to specify the worktree path (v2.1.84)
+    worktreePath?: string;
+  };
+}
 
 export interface WorktreeRemoveHookResponse extends BaseHookResponse {}
+
+export interface InstructionsLoadedHookResponse extends BaseHookResponse {}
+
+export interface CwdChangedHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "CwdChanged";
+    // absolute paths to watch for FileChanged hooks (v2.1.83)
+    watchPaths?: string[];
+  };
+}
+
+export interface FileChangedHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "FileChanged";
+    // absolute paths to watch for FileChanged hooks (v2.1.83)
+    watchPaths?: string[];
+  };
+}
 
 export interface ElicitationHookResponse extends BaseHookResponse {
   hookSpecificOutput?: {
@@ -429,10 +572,14 @@ export interface ElicitationResultHookResponse extends BaseHookResponse {
 
 export type HookResponse =
   | ConfigChangeHookResponse
+  | CwdChangedHookResponse
   | ElicitationHookResponse
   | ElicitationResultHookResponse
+  | FileChangedHookResponse
+  | InstructionsLoadedHookResponse
   | NotificationHookResponse
   | PermissionRequestHookResponse
+  | PostCompactHookResponse
   | PostToolUseFailureHookResponse
   | PostToolUseHookResponse
   | PreCompactHookResponse
@@ -440,23 +587,53 @@ export type HookResponse =
   | SessionEndHookResponse
   | SessionStartHookResponse
   | SetupHookResponse
+  | StopFailureHookResponse
   | StopHookResponse
   | SubagentStartHookResponse
   | SubagentStopHookResponse
   | TaskCompletedHookResponse
+  | TaskCreatedHookResponse
   | TeammateIdleHookResponse
   | UserPromptSubmitHookResponse
   | WorktreeCreateHookResponse
   | WorktreeRemoveHookResponse;
 
 export interface HookEventMap {
-  PreToolUse: {
-    input: PreToolUseHookInput;
-    response: PreToolUseHookResponse | void;
+  ConfigChange: {
+    input: ConfigChangeHookInput;
+    response: ConfigChangeHookResponse | void;
+  };
+  CwdChanged: {
+    input: CwdChangedHookInput;
+    response: CwdChangedHookResponse | void;
+  };
+  Elicitation: {
+    input: ElicitationHookInput;
+    response: ElicitationHookResponse | void;
+  };
+  ElicitationResult: {
+    input: ElicitationResultHookInput;
+    response: ElicitationResultHookResponse | void;
+  };
+  FileChanged: {
+    input: FileChangedHookInput;
+    response: FileChangedHookResponse | void;
+  };
+  InstructionsLoaded: {
+    input: InstructionsLoadedHookInput;
+    response: InstructionsLoadedHookResponse | void;
+  };
+  Notification: {
+    input: NotificationHookInput;
+    response: NotificationHookResponse | void;
   };
   PermissionRequest: {
     input: PermissionRequestHookInput;
     response: PermissionRequestHookResponse | void;
+  };
+  PostCompact: {
+    input: PostCompactHookInput;
+    response: PostCompactHookResponse | void;
   };
   PostToolUse: {
     input: PostToolUseHookInput;
@@ -466,17 +643,21 @@ export interface HookEventMap {
     input: PostToolUseFailureHookInput;
     response: PostToolUseFailureHookResponse | void;
   };
-  UserPromptSubmit: {
-    input: UserPromptSubmitHookInput;
-    response: UserPromptSubmitHookResponse | void;
+  PreCompact: {
+    input: PreCompactHookInput;
+    response: PreCompactHookResponse | void;
   };
-  SessionStart: {
-    input: SessionStartHookInput;
-    response: SessionStartHookResponse | void;
+  PreToolUse: {
+    input: PreToolUseHookInput;
+    response: PreToolUseHookResponse | void;
   };
   SessionEnd: {
     input: SessionEndHookInput;
     response: SessionEndHookResponse | void;
+  };
+  SessionStart: {
+    input: SessionStartHookInput;
+    response: SessionStartHookResponse | void;
   };
   Setup: {
     input: SetupHookInput;
@@ -485,6 +666,10 @@ export interface HookEventMap {
   Stop: {
     input: StopHookInput;
     response: StopHookResponse | void;
+  };
+  StopFailure: {
+    input: StopFailureHookInput;
+    response: StopFailureHookResponse | void;
   };
   SubagentStart: {
     input: SubagentStartHookInput;
@@ -498,21 +683,17 @@ export interface HookEventMap {
     input: TaskCompletedHookInput;
     response: TaskCompletedHookResponse | void;
   };
+  TaskCreated: {
+    input: TaskCreatedHookInput;
+    response: TaskCreatedHookResponse | void;
+  };
   TeammateIdle: {
     input: TeammateIdleHookInput;
     response: TeammateIdleHookResponse | void;
   };
-  Notification: {
-    input: NotificationHookInput;
-    response: NotificationHookResponse | void;
-  };
-  PreCompact: {
-    input: PreCompactHookInput;
-    response: PreCompactHookResponse | void;
-  };
-  ConfigChange: {
-    input: ConfigChangeHookInput;
-    response: ConfigChangeHookResponse | void;
+  UserPromptSubmit: {
+    input: UserPromptSubmitHookInput;
+    response: UserPromptSubmitHookResponse | void;
   };
   WorktreeCreate: {
     input: WorktreeCreateHookInput;
@@ -521,14 +702,6 @@ export interface HookEventMap {
   WorktreeRemove: {
     input: WorktreeRemoveHookInput;
     response: WorktreeRemoveHookResponse | void;
-  };
-  Elicitation: {
-    input: ElicitationHookInput;
-    response: ElicitationHookResponse | void;
-  };
-  ElicitationResult: {
-    input: ElicitationResultHookInput;
-    response: ElicitationResultHookResponse | void;
   };
 }
 

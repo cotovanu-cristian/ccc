@@ -122,6 +122,19 @@ Preset  ├─► merge ─► "virtual overlay" ─► Claude Code
 Project ┘
 ```
 
+### Built-In Runtime Patches
+
+CCC also applies a small set of launcher-owned runtime patches to the Claude CLI bundle before importing it. These are not written back into `node_modules`; CCC writes a patched temporary copy and launches that copy for the current session.
+
+One built-in patch intercepts outgoing `fetch` calls to `/v1/messages` and normalizes any `cch=<5 hex chars>` token in the serialized JSON request body to a fixed value. This works around an upstream Claude Code cache-busting bug where `cch` billing hash values can leak into conversation content and then change across turns, invalidating the prompt cache.
+
+What this means in practice:
+
+- You do not need to configure the `cch` workaround in `config` or `dev-config`.
+- The workaround only touches outgoing Messages API request bodies.
+- Literal text matching `cch=<5 hex chars>` inside conversation content will be normalized before the request is sent.
+- This is a launcher-side compatibility shim, not a permanent upstream fix.
+
 ## Using Models from Other Vendors
 
 You can configure CCC to use models from other vendors by setting environment variables in your `settings.ts`. This allows you to use models like GLM, Kimi K2, or Deepseek through their Anthropic-compatible APIs.

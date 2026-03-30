@@ -1293,8 +1293,9 @@ const monkeyPatchFS = ({
 
     const descriptor = Object.getOwnPropertyDescriptor(fsDefault, method);
     if (!descriptor || !("value" in descriptor) || !descriptor.writable) {
-      if (descriptor?.get && !descriptor.set)
-        {log.vfs(`Skipping accessor-only fs.${method} during monkey patch`);}
+      if (descriptor?.get && !descriptor.set) {
+        log.vfs(`Skipping accessor-only fs.${method} during monkey patch`);
+      }
       continue;
     }
 
@@ -1863,8 +1864,9 @@ export const setupVirtualFileSystem = (args: {
 
   // filter out cli-only flags (they are passed as args, not written to settings.json)
   // and env vars that already exist in process.env (user env takes precedence)
-  const { cli: _cli, ...filteredSettings } = args.settings;
+  const { cli: _cli, patches: _patches, ...filteredSettings } = args.settings;
   void _cli; // eslint: intentionally excluded from settings.json
+  void _patches; // eslint: intentionally excluded from settings.json
   if (filteredSettings.env && typeof filteredSettings.env === "object") {
     const envRecord = filteredSettings.env as Record<string, string>;
     const filteredEnv: Record<string, string> = {};
