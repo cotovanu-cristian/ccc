@@ -44,13 +44,13 @@ const marketplaceSourceSchema = z.discriminatedUnion("source", [
     source: z.literal("npm"),
     package: z.string(),
     version: z.string().optional(),
-    registry: z.string().optional(),
+    registry: z.url().optional(),
   }),
   z.object({
     source: z.literal("pip"),
     package: z.string(),
     version: z.string().optional(),
-    registry: z.string().optional(),
+    registry: z.url().optional(),
   }),
   z.object({
     source: z.literal("file"),
