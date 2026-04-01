@@ -502,8 +502,8 @@ const main = async () => {
   const scopeArg = process.argv[4];
   const sourceArg = process.argv[5];
 
-  if (!mode || !id || (mode !== "hook" && mode !== "hook-batch" && mode !== "mcp")) {
-    console.error("Usage: runner.ts <hook|hook-batch|mcp> <id> [scope] [source]");
+  if (!mode || !id || (mode !== "hook" && mode !== "hook-batch" && mode !== "mcp" && mode !== "popup-input")) {
+    console.error("Usage: runner.ts <hook|hook-batch|mcp|popup-input> <id> [scope] [source]");
     process.exit(2);
   }
 
@@ -512,6 +512,12 @@ const main = async () => {
     sourceArg === "builtin" || sourceArg === "config" || sourceArg === "plugin" ? sourceArg : undefined;
 
   try {
+    if (mode === "popup-input") {
+      const { runPopupInput } = await import("@/cli/tui/popup-input-runner");
+      runPopupInput(id);
+      return;
+    }
+
     if (mode === "hook") {
       await runHook(id, scope, source);
     } else if (mode === "hook-batch") {
