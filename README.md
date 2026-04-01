@@ -75,14 +75,18 @@ Your configuration lives in the `./config` directory, which includes some exampl
 ccc # wrap and launch claude
 ccc --continue # all the arguments you pass will be passed through to claude
 
-# except these special cases used for debugging (they don't launch claude)
+# except these special cases used for debugging
 ccc --doctor
 ccc --print-config
 ccc --print-system-prompt
 ccc --print-user-prompt
 ccc --dump-config
 ccc --debug-mcp <mcp-name>
+ccc --doru # launcher-only flag; place it before Claude args
+ccc --doru --continue
 ```
+
+`ccc --doru` runs CCC through `npx doru --ui` and auto-opens doru's live UI. Treat `--doru` as a launcher-only leading flag and place it before any Claude args. The first run may download `doru`, and doru itself requires `npx` plus Node.js 22+.
 
 ## Configuration Layers
 

@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LAUNCHER_ROOT = resolve(__dirname, "../..");
 const FIXTURES_DIR = resolve(__dirname, "../fixtures");
+type LauncherEntrypoint = "launcher" | "wrapper";
 
 // IMPORTANT: Use temp directory for test configs - NEVER touch dev-config
 const TEST_CONFIG_BASE = join(tmpdir(), "ccc-test");
@@ -16,6 +17,7 @@ export interface RunCCCOptions {
   projectDir: string;
   configFixture?: string;
   args?: string[];
+  entrypoint?: LauncherEntrypoint;
   env?: Record<string, string>;
   timeout?: number;
 }
@@ -75,7 +77,14 @@ const cleanupTestEnvironment = (testId: string) => {
 };
 
 export const runCCC = async (options: RunCCCOptions): Promise<RunCCCResult> => {
-  const { projectDir, configFixture, args = ["--print-config"], env = {}, timeout = 30_000 } = options;
+  const {
+    projectDir,
+    configFixture,
+    args = ["--print-config"],
+    entrypoint = "launcher",
+    env = {},
+    timeout = 30_000,
+  } = options;
 
   // resolve project directory
   const resolvedProjectDir =
@@ -87,7 +96,11 @@ export const runCCC = async (options: RunCCCOptions): Promise<RunCCCResult> => {
 
   // setup isolated test environment if config fixture specified
   let testEnv: TestConfigPaths | null = null;
-  const launcherPath = join(LAUNCHER_ROOT, "src/cli/launcher.ts");
+  const launcherPath = join(
+    LAUNCHER_ROOT,
+    "src/cli",
+    entrypoint === "wrapper" ? "launcher-wrapper.ts" : "launcher.ts",
+  );
   const testEnvVars: Record<string, string> = {};
 
   if (configFixture) {
