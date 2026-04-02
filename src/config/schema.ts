@@ -13,6 +13,16 @@ export const agentDefinitionSchema = z.object({
   criticalSystemReminder_EXPERIMENTAL: z.string().optional(),
   // auto-submitted as the first user turn when this agent is the main thread agent (v2.1.83)
   initialPrompt: z.string().optional(),
+  // run this agent as a background task (non-blocking, fire-and-forget) when invoked (v2.1.89)
+  background: z.boolean().optional(),
+  // scope for auto-loading agent memory files (v2.1.89)
+  memory: z.enum(["user", "project", "local"]).optional(),
+  // reasoning effort level: named level or integer (v2.1.89)
+  effort: z.union([z.enum(["low", "medium", "high", "max"]), z.number().int()]).optional(),
+  // permission mode controlling how tool executions are handled (v2.1.89)
+  permissionMode: z
+    .enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"])
+    .optional(),
 });
 
 export type AgentDefinition = z.infer<typeof agentDefinitionSchema>;
@@ -246,6 +256,9 @@ export const settingsSchema = z.object({
   outputStyle: z.string().optional(),
   // advisor model for server-side advisor tool (v2.1.85)
   advisorModel: z.string().optional(),
+
+  // auto-compact window size in tokens (v2.1.90)
+  autoCompactWindow: z.number().int().min(100000).max(1000000).optional(),
 
   apiKeyHelper: z.string().optional(),
   awsAuthRefresh: z.string().optional(),

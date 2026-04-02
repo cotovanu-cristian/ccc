@@ -6,6 +6,7 @@ export type HookEventName =
   | "FileChanged"
   | "InstructionsLoaded"
   | "Notification"
+  | "PermissionDenied"
   | "PermissionRequest"
   | "PostCompact"
   | "PostToolUse"
@@ -166,6 +167,15 @@ export interface PostToolUseHookInput extends BaseHookInput {
   tool_input: Record<string, unknown>;
   tool_response: unknown;
   tool_use_id: string;
+}
+
+// fires after auto mode classifier denies a tool call; output can request retry (v2.1.89)
+export interface PermissionDeniedHookInput extends BaseHookInput {
+  hook_event_name: "PermissionDenied";
+  tool_name: string;
+  tool_input: Record<string, unknown>;
+  tool_use_id: string;
+  reason: string;
 }
 
 export interface PermissionRequestHookInput extends BaseHookInput {
@@ -381,6 +391,7 @@ export type ClaudeHookInput =
   | FileChangedHookInput
   | InstructionsLoadedHookInput
   | NotificationHookInput
+  | PermissionDeniedHookInput
   | PermissionRequestHookInput
   | PostCompactHookInput
   | PostToolUseFailureHookInput
@@ -411,7 +422,8 @@ interface BaseHookResponse {
 export interface PreToolUseHookResponse extends BaseHookResponse {
   hookSpecificOutput?: {
     hookEventName: "PreToolUse";
-    permissionDecision?: "allow" | "ask" | "deny";
+    // "defer" pauses headless sessions at tool calls (v2.1.89)
+    permissionDecision?: "allow" | "ask" | "defer" | "deny";
     permissionDecisionReason?: string;
     updatedInput?: Record<string, unknown>;
     additionalContext?: string;
@@ -430,6 +442,14 @@ export interface PostToolUseHookResponse extends BaseHookResponse {
     additionalContext?: string;
     // override MCP tool output (v2.1.64)
     updatedMCPToolOutput?: unknown;
+  };
+}
+
+// fire-and-forget — output can request retry via {retry: true} (v2.1.89)
+export interface PermissionDeniedHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "PermissionDenied";
+    retry?: boolean;
   };
 }
 
@@ -578,6 +598,7 @@ export type HookResponse =
   | FileChangedHookResponse
   | InstructionsLoadedHookResponse
   | NotificationHookResponse
+  | PermissionDeniedHookResponse
   | PermissionRequestHookResponse
   | PostCompactHookResponse
   | PostToolUseFailureHookResponse
@@ -626,6 +647,10 @@ export interface HookEventMap {
   Notification: {
     input: NotificationHookInput;
     response: NotificationHookResponse | void;
+  };
+  PermissionDenied: {
+    input: PermissionDeniedHookInput;
+    response: PermissionDeniedHookResponse | void;
   };
   PermissionRequest: {
     input: PermissionRequestHookInput;

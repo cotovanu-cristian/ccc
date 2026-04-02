@@ -54,6 +54,13 @@ const builtins: BuiltinCommands = {
     batchable: true,
     handler: eventRecorder.record,
   }),
+  PermissionDenied: createHook({
+    event: "PermissionDenied",
+    id: "builtin-recorder",
+    source: "builtin",
+    batchable: true,
+    handler: eventRecorder.record,
+  }),
   PermissionRequest: createHook({
     event: "PermissionRequest",
     id: "builtin-recorder",
