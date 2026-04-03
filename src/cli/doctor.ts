@@ -52,6 +52,7 @@ export interface DoctorReport {
     };
   };
   skills: ItemTraces;
+  profiles: ItemTraces;
 }
 
 const listItemNames = (dirPath: string | undefined) => {
@@ -245,6 +246,38 @@ const collectLayeredHooks = async (context: Context): Promise<ItemTraces> => {
         // hooks are merged (appended) from project
         items[eventType].push({ layer: "project", name: context.project.projectConfig.name, mode: "append" });
       }
+    }
+  }
+
+  return items;
+};
+
+const collectLayeredProfiles = async (context: Context): Promise<ItemTraces> => {
+  const items: ItemTraces = {};
+  const settingsLayers = await loadConfigFromLayers<Record<string, unknown>>(context, "settings.ts");
+
+  const extractNames = (layer: Record<string, unknown> | undefined): string[] => {
+    if (!layer || typeof layer.profiles !== "object" || !layer.profiles) return [];
+    return Object.keys(layer.profiles as Record<string, unknown>);
+  };
+
+  for (const name of extractNames(settingsLayers.global)) {
+    items[name] = [{ layer: "global", mode: "override" }];
+  }
+
+  for (let i = 0; i < settingsLayers.presets.length; i++) {
+    const preset = context.project.presets[i];
+    if (!preset) continue;
+    for (const name of extractNames(settingsLayers.presets[i])) {
+      if (!items[name]) items[name] = [];
+      items[name].push({ layer: "preset", name: preset.name, mode: "override" });
+    }
+  }
+
+  if (settingsLayers.project && context.project.projectConfig) {
+    for (const name of extractNames(settingsLayers.project)) {
+      if (!items[name]) items[name] = [];
+      items[name].push({ layer: "project", name: context.project.projectConfig.name, mode: "override" });
     }
   }
 
@@ -550,6 +583,15 @@ const printPretty = (report: DoctorReport) => {
   } else {
     p(skillNames.map((name) => ({ name, trace: fmtTrace(report.skills[name] || []) })));
   }
+
+  // profiles
+  p.bold.blue.log("\nProfiles:");
+  const profileNames = Object.keys(report.profiles).sort();
+  if (profileNames.length === 0) {
+    p.dim.log("(none)");
+  } else {
+    p(profileNames.map((name) => ({ name, trace: fmtTrace(report.profiles[name] || []) })));
+  }
 };
 
 export const runDoctor = async (
@@ -574,6 +616,7 @@ export const runDoctor = async (
   const hooks = await collectLayeredHooks(context);
   const mcps = await collectLayeredMCPs(context, artifacts.mcps);
   const skills = await collectLayeredSkills(context);
+  const profiles = await collectLayeredProfiles(context);
   const pluginReport = await collectLayeredPlugins(context);
 
   const report: DoctorReport = {
@@ -598,6 +641,7 @@ export const runDoctor = async (
       },
     },
     skills,
+    profiles,
   };
 
   if (opts.json) {

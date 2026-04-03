@@ -1864,9 +1864,19 @@ export const setupVirtualFileSystem = (args: {
 
   // filter out cli-only flags (they are passed as args, not written to settings.json)
   // and env vars that already exist in process.env (user env takes precedence)
-  const { cli: _cli, patches: _patches, ...filteredSettings } = args.settings;
+  const {
+    cli: _cli,
+    patches: _patches,
+    profiles: _profiles,
+    _profileName,
+    _availableProfiles,
+    ...filteredSettings
+  } = args.settings;
   void _cli; // eslint: intentionally excluded from settings.json
   void _patches; // eslint: intentionally excluded from settings.json
+  void _profiles; // eslint: intentionally excluded from settings.json
+  void _profileName; // eslint: diagnostic-only field
+  void _availableProfiles; // eslint: diagnostic-only field
   if (filteredSettings.env && typeof filteredSettings.env === "object") {
     const envRecord = filteredSettings.env as Record<string, string>;
     const filteredEnv: Record<string, string> = {};

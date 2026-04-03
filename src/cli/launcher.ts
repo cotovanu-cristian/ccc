@@ -16,6 +16,7 @@ import { buildSettings, buildSystemPrompt, buildUserPrompt } from "@/config/buil
 import { buildSkills } from "@/config/builders/build-skills";
 import { dumpConfig } from "@/config/dump-config";
 import { Context } from "@/context/Context";
+import { stripProfileFromArgv } from "@/config/builders/resolve-profile";
 import { applyBuiltInPatches, applyUserPatches, type RuntimePatch } from "@/patches/cli-patches";
 import { getPluginInfo, loadCCCPluginsFromConfig } from "@/plugins";
 import { log } from "@/utils/log";
@@ -293,7 +294,18 @@ const run = async () => {
   // --print-config
   if (process.argv.includes("--print-config")) {
     console.log(p.blue("\nSettings:"));
-    console.log(JSON.stringify(settings, null, 2));
+    // strip diagnostic fields from output
+    const { _profileName, _availableProfiles, ...printableSettings } = settings;
+    console.log(JSON.stringify(printableSettings, null, 2));
+    const profileNames = Object.keys(_availableProfiles ?? {}).sort();
+    if (profileNames.length > 0) {
+      console.log(p.blue("\nProfiles:"));
+      if (_profileName) console.log(`  active: ${_profileName}`);
+      for (const name of profileNames) {
+        const marker = name === _profileName ? " (active)" : "";
+        console.log(`  ${name}${marker}`);
+      }
+    }
     console.log(p.blue("\nPlugins:"));
     console.log(JSON.stringify(pluginsConfig, null, 2));
     console.log(p.blue("\nSkills:"));
@@ -501,7 +513,7 @@ const run = async () => {
     disallowedTools?: string[];
     allowedTools?: string[];
     addDir?: string[];
-    permissionMode?: "acceptEdits" | "bypassPermissions" | "default" | "dontAsk" | "plan";
+    permissionMode?: "acceptEdits" | "auto" | "bypassPermissions" | "default" | "dontAsk" | "plan";
     verbose?: boolean;
     debug?: boolean | string;
     chrome?: boolean;
@@ -883,7 +895,8 @@ const run = async () => {
   }
 
   const launchTask = startup.start("Launching Claude...");
-  process.argv = [process.argv[0]!, claudeModulePath, ...args, ...process.argv.slice(2)];
+  const cleanedUserArgs = stripProfileFromArgv(process.argv.slice(2));
+  process.argv = [process.argv[0]!, claudeModulePath, ...args, ...cleanedUserArgs];
   launchTask.done();
   await import(importPath);
 };

@@ -11,11 +11,36 @@ import { validateSettings } from "@/config/schema";
 import { getPluginHooks, getPluginPrompts } from "@/plugins/registry";
 import { resolveConfigDirectoryPath } from "@/utils/config-directory";
 import { buildInlineEnvCommandPrefix } from "@/utils/shell-command";
+import { applyProfile, getActiveProfileName, mergeProfiles } from "./resolve-profile";
+
+type ProfileMap = Record<string, Record<string, unknown>>;
+
+const extractLayerProfiles = (layer: Record<string, unknown> | undefined): ProfileMap | undefined => {
+  if (!layer || typeof layer.profiles !== "object" || !layer.profiles) return undefined;
+  return layer.profiles as ProfileMap;
+};
 
 export const buildSettings = async (context: Context) => {
   const layers = await loadConfigFromLayers<Record<string, unknown>>(context, "settings.ts");
+
+  // merge profiles by name across all layers before the main merge
+  const allProfiles = mergeProfiles(
+    extractLayerProfiles(layers.global),
+    ...layers.presets.map(extractLayerProfiles),
+    extractLayerProfiles(layers.project),
+  );
+
+  // standard layer merge (profiles included but will be stripped)
   const merged = mergeSettings(layers.global, ...layers.presets, layers.project);
-  const validated = validateSettings(merged);
+  const { profiles: _profiles, ...baseSettings } = merged;
+
+  // apply active profile if --profile was specified
+  const profileName = getActiveProfileName();
+  const effectiveSettings = profileName
+    ? applyProfile(baseSettings, profileName, allProfiles)
+    : baseSettings;
+
+  const validated = validateSettings(effectiveSettings);
 
   // model: "auto" -> undefined
   const transformedValidated = { ...validated };
@@ -97,6 +122,8 @@ export const buildSettings = async (context: Context) => {
     ...transformedValidated,
     hooks: finalHooks,
     ...(statusLine && { statusLine }),
+    _profileName: profileName,
+    _availableProfiles: allProfiles,
   };
 
   return result;
