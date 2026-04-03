@@ -112,7 +112,7 @@ const runtimePatchSchema = z.union([
 ]);
 
 // https://docs.anthropic.com/en/docs/claude-code/settings
-export const settingsSchema = z.object({
+const baseSettingsSchema = z.object({
   env: z.record(z.string(), z.string()).optional(),
 
   // cli flags
@@ -126,7 +126,7 @@ export const settingsSchema = z.object({
       allowedTools: z.array(z.string()).optional(),
       // additional working directories for Claude to access
       addDir: z.array(z.string()).optional(),
-      // permission mode to start in: "default", "acceptEdits", "plan", "bypassPermissions"
+      // permission mode to start in: "default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"
       permissionMode: z
         .enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"])
         .optional(),
@@ -237,6 +237,8 @@ export const settingsSchema = z.object({
   autoUpdatesChannel: z.enum(["stable", "latest"]).optional(),
   // disable all hooks globally
   disableAllHooks: z.boolean().optional(),
+  // disable inline shell execution in skills and custom slash commands (v2.1.91)
+  disableSkillShellExecution: z.boolean().optional(),
   // default shell for ! commands: bash (default) or powershell (v2.1.85)
   defaultShell: z.enum(["bash", "powershell"]).optional(),
   // customize spinner verbs (v2.1.23)
@@ -498,6 +500,11 @@ export const settingsSchema = z.object({
   // preferredNotifChannel: z.string().optional(),
   // theme: z.string().optional(),
   // verbose: z.boolean().optional(),
+});
+
+// named configuration profiles applied via --profile <name> (CCC-only, stripped before settings.json)
+export const settingsSchema = baseSettingsSchema.extend({
+  profiles: z.record(z.string(), baseSettingsSchema.partial()).optional(),
 });
 
 export type ClaudeSettings = z.infer<typeof settingsSchema>;
