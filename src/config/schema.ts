@@ -262,6 +262,28 @@ const baseSettingsSchema = z.object({
   // auto-compact window size in tokens (v2.1.90)
   autoCompactWindow: z.number().int().min(100000).max(1000000).optional(),
 
+  // blocks startup until remote managed settings are freshly fetched; exits on failure (v2.1.92)
+  forceRemoteSettingsRefresh: z.boolean().optional(),
+
+  // autonomous background operation configuration (v2.1.92)
+  proactive: z
+    .object({
+      // when true, autonomous background operation activates automatically at launch (if entitled)
+      autoEnable: z.union([z.boolean(), z.null()]).optional(),
+    })
+    .optional(),
+
+  // @internal voice handsfree settings; gated by VOICE_HANDSFREE feature flag (v2.1.92)
+  voice: z
+    .object({
+      enabled: z.boolean().optional(),
+      // 'hold' (default): hold to talk. 'tap': tap to start, tap to stop+submit
+      mode: z.enum(["hold", "tap"]).optional(),
+      // submit the prompt when hold-to-talk is released (hold mode only)
+      autoSubmit: z.boolean().optional(),
+    })
+    .optional(),
+
   apiKeyHelper: z.string().optional(),
   awsAuthRefresh: z.string().optional(),
   // command to refresh GCP authentication
