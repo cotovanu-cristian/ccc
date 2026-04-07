@@ -189,6 +189,7 @@ export interface PermissionRequestHookInput extends BaseHookInput {
 export interface UserPromptSubmitHookInput extends BaseHookInput {
   hook_event_name: "UserPromptSubmit";
   prompt: string;
+  session_title?: string;
 }
 
 export interface SessionStartHookInput extends BaseHookInput {
@@ -477,6 +478,8 @@ export interface UserPromptSubmitHookResponse extends BaseHookResponse {
   hookSpecificOutput?: {
     hookEventName: "UserPromptSubmit";
     additionalContext?: string;
+    // set the session title, same effect as /rename (v2.1.94)
+    sessionTitle?: string;
   };
 }
 
