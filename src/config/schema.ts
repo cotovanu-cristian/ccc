@@ -413,6 +413,8 @@ const baseSettingsSchema = z.object({
   disableAutoMode: z.enum(["disable"]).optional(),
   // default transcript view: chat or transcript
   defaultView: z.enum(["chat", "transcript"]).optional(),
+  // default transcript view mode on startup: default, verbose, or focus (v2.1.97)
+  viewMode: z.enum(["default", "verbose", "focus"]).optional(),
   // show "clear context" option in plan approval dialog (v2.1.81, default false)
   showClearContextOnPlanAccept: z.boolean().optional(),
   // enable background memory consolidation (auto-dream) (v2.1.81)
@@ -456,7 +458,13 @@ const baseSettingsSchema = z.object({
     .optional(),
 
   statusLine: z
-    .object({ type: z.literal("command"), command: z.string(), padding: z.number().optional() })
+    .object({
+      type: z.literal("command"),
+      command: z.string(),
+      padding: z.number().optional(),
+      // re-run the status line command every N seconds in addition to event-driven updates (v2.1.97)
+      refreshInterval: z.number().min(1).optional(),
+    })
     .optional(),
   fileSuggestion: z.object({ type: z.literal("command"), command: z.string() }).optional(),
 
