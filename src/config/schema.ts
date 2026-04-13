@@ -23,6 +23,8 @@ export const agentDefinitionSchema = z.object({
   permissionMode: z
     .enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"])
     .optional(),
+  // run agent in an isolated git worktree that is auto-cleaned when done (v2.1.89)
+  isolation: z.enum(["worktree"]).optional(),
 });
 
 export type AgentDefinition = z.infer<typeof agentDefinitionSchema>;
@@ -265,13 +267,23 @@ const baseSettingsSchema = z.object({
   // blocks startup until remote managed settings are freshly fetched; exits on failure (v2.1.92)
   forceRemoteSettingsRefresh: z.boolean().optional(),
 
-  // autonomous background operation configuration (v2.1.92)
-  proactive: z
+  // per-skill description character cap in the skill listing sent to Claude (default: 1536) (v2.1.105)
+  skillListingMaxDescChars: z.number().int().positive().optional(),
+  // fraction of context window reserved for skill listing (default: 0.01 = 1%) (v2.1.105)
+  skillListingBudgetFraction: z.number().positive().max(1).optional(),
+  // per-skill listing overrides keyed by skill name (v2.1.105)
+  skillOverrides: z
+    .record(z.string(), z.enum(["on", "name-only", "user-invocable-only", "off"]))
+    .optional(),
+  // custom per-subagent status line shown in the agent panel (v2.1.105)
+  subagentStatusLine: z
     .object({
-      // when true, autonomous background operation activates automatically at launch (if entitled)
-      autoEnable: z.union([z.boolean(), z.null()]).optional(),
+      type: z.literal("command"),
+      command: z.string(),
     })
     .optional(),
+  // @internal session recap when returning after 5+ min; absent or true = enabled (v2.1.105)
+  awaySummaryEnabled: z.boolean().optional(),
 
   // @internal voice handsfree settings; gated by VOICE_HANDSFREE feature flag (v2.1.92)
   voice: z

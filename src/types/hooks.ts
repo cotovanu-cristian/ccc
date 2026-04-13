@@ -47,12 +47,14 @@ export type HookMatcherType =
   | "Grep"
   | "LSP"
   | "manual"
+  | "Monitor"
   | "MultiEdit"
   | "NotebookEdit"
   | "NotebookRead"
   | "PowerShell"
   | "Read"
   | "resume"
+  | "ScheduleWakeup"
   | "SendMessage"
   | "Skill"
   | "startup"
@@ -513,7 +515,11 @@ export interface NotificationHookResponse extends BaseHookResponse {
   };
 }
 
-export interface PreCompactHookResponse extends BaseHookResponse {}
+// exit code 2 or {"decision":"block"} blocks compaction (v2.1.105)
+export interface PreCompactHookResponse extends BaseHookResponse {
+  decision?: "block";
+  reason?: string;
+}
 
 export interface PostCompactHookResponse extends BaseHookResponse {}
 
