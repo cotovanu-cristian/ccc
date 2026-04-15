@@ -284,6 +284,8 @@ const baseSettingsSchema = z.object({
     .optional(),
   // @internal session recap when returning after 5+ min; absent or true = enabled (v2.1.105)
   awaySummaryEnabled: z.boolean().optional(),
+  // terminal UI renderer: "fullscreen" uses the alt-screen flicker-free renderer (v2.1.110)
+  tui: z.enum(["default", "fullscreen"]).optional(),
 
   // @internal voice handsfree settings; gated by VOICE_HANDSFREE feature flag (v2.1.92)
   voice: z

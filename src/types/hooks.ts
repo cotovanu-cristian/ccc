@@ -52,7 +52,9 @@ export type HookMatcherType =
   | "NotebookEdit"
   | "NotebookRead"
   | "PowerShell"
+  | "PushNotification"
   | "Read"
+  | "REPL"
   | "resume"
   | "ScheduleWakeup"
   | "SendMessage"
@@ -248,6 +250,8 @@ export type NotificationType =
   | "elicitation_response"
   | "idle_prompt"
   | "permission_prompt"
+  // push notification sent via PushNotification tool (v2.1.110)
+  | "push_notification"
   // teammate permission prompt forwarded from a worker (v2.1.65)
   | "worker_permission_prompt";
 
