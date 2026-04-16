@@ -18,7 +18,7 @@ export const agentDefinitionSchema = z.object({
   // scope for auto-loading agent memory files (v2.1.89)
   memory: z.enum(["user", "project", "local"]).optional(),
   // reasoning effort level: named level or integer (v2.1.89)
-  effort: z.union([z.enum(["low", "medium", "high", "max"]), z.number().int()]).optional(),
+  effort: z.union([z.enum(["low", "medium", "high", "xhigh", "max"]), z.number().int()]).optional(),
   // permission mode controlling how tool executions are handled (v2.1.89)
   permissionMode: z
     .enum(["default", "acceptEdits", "auto", "plan", "bypassPermissions", "dontAsk"])
@@ -206,8 +206,8 @@ const baseSettingsSchema = z.object({
       allowDangerouslySkipPermissions: z.boolean().optional(),
       // load additional settings from file or JSON string
       settings: z.string().optional(),
-      // effort level override via CLI (low, medium, high, max)
-      effort: z.enum(["low", "medium", "high", "max"]).optional(),
+      // effort level override via CLI (low, medium, high, xhigh, max)
+      effort: z.enum(["low", "medium", "high", "xhigh", "max"]).optional(),
       // file resources to download at startup
       file: z.array(z.string()).optional(),
       // write debug logs to a specific file path
@@ -250,12 +250,12 @@ const baseSettingsSchema = z.object({
       verbs: z.array(z.string()),
     })
     .optional(),
-  // enable fast mode for faster Opus 4.6 responses at higher cost (v2.1.36)
+  // enable fast mode for faster Opus responses at higher cost (v2.1.36)
   fastMode: z.boolean().optional(),
   // per-session fast mode opt-in (v2.1.59)
   fastModePerSessionOptIn: z.boolean().optional(),
-  // effort level for Opus 4.6 adaptive reasoning: low, medium, high (default)
-  effortLevel: z.enum(["low", "medium", "high"]).optional(),
+  // persisted effort level for supported models (v2.1.111)
+  effortLevel: z.enum(["low", "medium", "high", "xhigh"]).optional(),
   // output style to adjust system prompt (e.g., "Explanatory")
   outputStyle: z.string().optional(),
   // advisor model for server-side advisor tool (v2.1.85)
@@ -299,6 +299,8 @@ const baseSettingsSchema = z.object({
     .optional(),
 
   apiKeyHelper: z.string().optional(),
+  // shell command that outputs a Proxy-Authorization header value (EAP) (v2.1.111)
+  proxyAuthHelper: z.string().optional(),
   awsAuthRefresh: z.string().optional(),
   // command to refresh GCP authentication
   gcpAuthRefresh: z.string().optional(),
