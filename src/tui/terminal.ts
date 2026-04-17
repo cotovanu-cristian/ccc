@@ -150,10 +150,12 @@ export const parseKeypress = (data: Buffer): KeyEvent[] => {
   return events;
 };
 
-export const getTerminalSize = () => ({
-  rows: process.stdout.rows || 24,
-  cols: process.stdout.columns || 80,
-});
+export const getTerminalSize = () => {
+  return {
+    rows: process.stdout.rows || 24,
+    cols: process.stdout.columns || 80,
+  };
+};
 
 export const write = (text: string) => {
   process.stdout.write(text);

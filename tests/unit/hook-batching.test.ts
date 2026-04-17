@@ -25,24 +25,28 @@ const baseInput = {
 
 const createPreToolUseInput = (
   overrides: Partial<PreToolUseHookInput> = {},
-): PreToolUseHookInput => ({
-  ...baseInput,
-  hook_event_name: "PreToolUse",
-  tool_name: "Bash",
-  tool_input: { command: "pwd" },
-  tool_use_id: "tool-1",
-  ...overrides,
-});
+): PreToolUseHookInput => {
+  return ({
+    ...baseInput,
+    hook_event_name: "PreToolUse",
+    tool_name: "Bash",
+    tool_input: { command: "pwd" },
+    tool_use_id: "tool-1",
+    ...overrides,
+  })
+};
 
 const createTaskCompletedInput = (
   overrides: Partial<TaskCompletedHookInput> = {},
-): TaskCompletedHookInput => ({
-  ...baseInput,
-  hook_event_name: "TaskCompleted",
-  task_id: "task-1",
-  task_subject: "ship it",
-  ...overrides,
-});
+): TaskCompletedHookInput => {
+  return ({
+    ...baseInput,
+    hook_event_name: "TaskCompleted",
+    task_id: "task-1",
+    task_subject: "ship it",
+    ...overrides,
+  })
+};
 
 const decodeBatchEntries = (hook: HookCommand): HookBatchCommandEntry[] => {
   const match = hook.command.match(/hook-batch '([^']+)'/);

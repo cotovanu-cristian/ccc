@@ -262,7 +262,7 @@ const baseSettingsSchema = z.object({
   advisorModel: z.string().optional(),
 
   // auto-compact window size in tokens (v2.1.90)
-  autoCompactWindow: z.number().int().min(100000).max(1000000).optional(),
+  autoCompactWindow: z.number().int().min(100_000).max(1_000_000).optional(),
 
   // blocks startup until remote managed settings are freshly fetched; exits on failure (v2.1.92)
   forceRemoteSettingsRefresh: z.boolean().optional(),
@@ -272,9 +272,7 @@ const baseSettingsSchema = z.object({
   // fraction of context window reserved for skill listing (default: 0.01 = 1%) (v2.1.105)
   skillListingBudgetFraction: z.number().positive().max(1).optional(),
   // per-skill listing overrides keyed by skill name (v2.1.105)
-  skillOverrides: z
-    .record(z.string(), z.enum(["on", "name-only", "user-invocable-only", "off"]))
-    .optional(),
+  skillOverrides: z.record(z.string(), z.enum(["on", "name-only", "user-invocable-only", "off"])).optional(),
   // custom per-subagent status line shown in the agent panel (v2.1.105)
   subagentStatusLine: z
     .object({
@@ -506,10 +504,14 @@ const baseSettingsSchema = z.object({
           allowAllUnixSockets: z.boolean().optional(),
           allowLocalBinding: z.boolean().optional(),
           allowedDomains: z.array(z.string()).optional(),
+          // domains always blocked even if matched by allowedDomains (v2.1.113)
+          deniedDomains: z.array(z.string()).optional(),
           httpProxyPort: z.number().optional(),
           socksProxyPort: z.number().optional(),
           // when true in managed settings, only managed allowedDomains apply (v2.1.61)
           allowManagedDomainsOnly: z.boolean().optional(),
+          // macOS only: additional XPC/Mach service names to allow looking up
+          allowMachLookup: z.array(z.string()).optional(),
         })
         .optional(),
       // filesystem access control within the sandbox (v2.1.61)

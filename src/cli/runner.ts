@@ -502,7 +502,11 @@ const main = async () => {
   const scopeArg = process.argv[4];
   const sourceArg = process.argv[5];
 
-  if (!mode || !id || (mode !== "hook" && mode !== "hook-batch" && mode !== "mcp" && mode !== "popup-input")) {
+  if (
+    !mode ||
+    !id ||
+    (mode !== "hook" && mode !== "hook-batch" && mode !== "mcp" && mode !== "popup-input")
+  ) {
     console.error("Usage: runner.ts <hook|hook-batch|mcp|popup-input> <id> [scope] [source]");
     process.exit(2);
   }

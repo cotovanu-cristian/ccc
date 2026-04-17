@@ -162,11 +162,13 @@ export const createMCPProxy = (originalConfig: ClaudeMCPConfig, filter: MCPToolF
           server.addPrompt({
             name: prompt.name,
             description: prompt.description,
-            arguments: prompt.arguments?.map((arg) => ({
-              name: arg.name,
-              description: arg.description,
-              required: arg.required || false,
-            })),
+            arguments: prompt.arguments?.map((arg) => {
+              return {
+                name: arg.name,
+                description: arg.description,
+                required: arg.required || false,
+              };
+            }),
             async load(args: Record<string, string | undefined>) {
               const cleanArgs: Record<string, string> = {};
               for (const [key, value] of Object.entries(args)) {

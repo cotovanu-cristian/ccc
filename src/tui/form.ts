@@ -345,8 +345,8 @@ const extractResult = (fields: FieldState[]): FormResultData => {
   return data;
 };
 
-export const runForm = (definition: PopupFormDefinition): Promise<FormResultData | null> =>
-  new Promise((resolve) => {
+export const runForm = (definition: PopupFormDefinition): Promise<FormResultData | null> => {
+  return new Promise((resolve) => {
     const fields = definition.fields.map(createFieldState);
     if (fields.length === 0) {
       resolve(null);
@@ -475,6 +475,7 @@ export const runForm = (definition: PopupFormDefinition): Promise<FormResultData
       resolve(null);
     }
   });
+};
 
 export const calculatePopupHeight = (definition: PopupFormDefinition) => {
   let lines = 2; // top padding + bottom padding

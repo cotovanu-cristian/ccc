@@ -19,12 +19,14 @@ interface SchemaFormOptions {
 export const createPopupFormFromSchema = (
   schema: z.ZodType,
   options: SchemaFormOptions,
-): PopupFormDefinition => ({
-  title: options.title,
-  width: options.width,
-  height: options.height,
-  fields: formFieldsFromSchema(schema),
-});
+): PopupFormDefinition => {
+  return {
+    title: options.title,
+    width: options.width,
+    height: options.height,
+    fields: formFieldsFromSchema(schema),
+  };
+};
 
 export const showPopupFromSchema = <T extends z.ZodType>(
   schema: T,

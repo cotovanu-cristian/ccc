@@ -238,10 +238,12 @@ const loadSkillFromTs = async (
       fileMap.set(normalizedPath, file.content);
     }
 
-    const files = Array.from(fileMap.entries()).map(([relativePath, content]) => ({
-      relativePath,
-      content,
-    }));
+    const files = Array.from(fileMap.entries()).map(([relativePath, content]) => {
+      return {
+        relativePath,
+        content,
+      };
+    });
 
     return { name: skillName, files };
   } catch (error) {

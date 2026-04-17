@@ -3,7 +3,7 @@ import { mergeSettings } from "@/config/layers";
 type ProfileMap = Record<string, Record<string, unknown>>;
 
 /** reads --profile <name> from process.argv (supports --profile=name and --profile name) */
-export const getActiveProfileName = (): string | undefined => {
+export const getActiveProfileName = () => {
   const args = process.argv.slice(2);
   const flag = "--profile";
   const eqPrefix = `${flag}=`;
@@ -35,8 +35,9 @@ export const mergeProfiles = (
   for (const layer of layers) {
     if (!layer) continue;
     for (const [name, profileSettings] of Object.entries(layer)) {
-      result[name] = result[name]
-        ? (mergeSettings(result[name], profileSettings) as Record<string, unknown>)
+      result[name] =
+        result[name] ?
+          (mergeSettings(result[name], profileSettings) as Record<string, unknown>)
         : { ...profileSettings };
     }
   }
@@ -59,7 +60,7 @@ export const applyProfile = (
 };
 
 /** returns a new argv with --profile and its value removed */
-export const stripProfileFromArgv = (argv: string[]): string[] => {
+export const stripProfileFromArgv = (argv: string[]) => {
   const result: string[] = [];
   const flag = "--profile";
   const eqPrefix = `${flag}=`;

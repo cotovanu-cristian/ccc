@@ -36,9 +36,7 @@ export const buildSettings = async (context: Context) => {
 
   // apply active profile if --profile was specified
   const profileName = getActiveProfileName();
-  const effectiveSettings = profileName
-    ? applyProfile(baseSettings, profileName, allProfiles)
-    : baseSettings;
+  const effectiveSettings = profileName ? applyProfile(baseSettings, profileName, allProfiles) : baseSettings;
 
   const validated = validateSettings(effectiveSettings);
 

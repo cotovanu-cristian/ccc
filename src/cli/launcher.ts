@@ -14,9 +14,10 @@ import { buildPlugins } from "@/config/builders/build-plugins";
 import { buildRules } from "@/config/builders/build-rules";
 import { buildSettings, buildSystemPrompt, buildUserPrompt } from "@/config/builders/build-settings";
 import { buildSkills } from "@/config/builders/build-skills";
+import { stripProfileFromArgv } from "@/config/builders/resolve-profile";
 import { dumpConfig } from "@/config/dump-config";
 import { Context } from "@/context/Context";
-import { stripProfileFromArgv } from "@/config/builders/resolve-profile";
+import { resolveCliForLaunch } from "@/native/resolver";
 import { applyBuiltInPatches, applyUserPatches, type RuntimePatch } from "@/patches/cli-patches";
 import { getPluginInfo, loadCCCPluginsFromConfig } from "@/plugins";
 import { log } from "@/utils/log";
@@ -24,7 +25,37 @@ import { createStartupLogger } from "@/utils/startup";
 import { setupVirtualFileSystem } from "@/utils/virtual-fs";
 import { buildTrustedClaudeState } from "@/utils/workspace-trust";
 
-type ResolveResult = { path: string; source: string };
+type ResolveResult = { path: string; source: string; native?: boolean; wrapperDir?: string };
+
+const findWrapperDir = (startPath: string) => {
+  let dir = path.dirname(startPath);
+  for (let i = 0; i < 5; i++) {
+    const pkgJsonPath = path.join(dir, "package.json");
+    if (fs.existsSync(pkgJsonPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8")) as { name?: string };
+        if (pkg.name === "@anthropic-ai/claude-code") return dir;
+      } catch {}
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+};
+
+const maybeResolveNative = (resolved: ResolveResult): ResolveResult => {
+  const wrapperDir = findWrapperDir(resolved.path);
+  if (!wrapperDir) return resolved;
+  const native = resolveCliForLaunch(wrapperDir);
+  if (!native) return resolved;
+  return {
+    path: native.path,
+    source: `${resolved.source} (native ${native.cacheHit ? "cache" : "extracted"})`,
+    native: true,
+    wrapperDir: native.info?.wrapperDir ?? wrapperDir,
+  };
+};
 
 const hasLongFlag = (args: string[], flag: string) => {
   return args.some((arg) => arg === flag || arg.startsWith(`${flag}=`));
@@ -54,13 +85,13 @@ const getLongFlagValue = (args: string[], flag: string) => {
 
 const resolveClaudeCli = async (launcherRoot: string): Promise<ResolveResult> => {
   if (process.env.CLAUDE_PATH) {
-    return { path: process.env.CLAUDE_PATH, source: "env override" };
+    return maybeResolveNative({ path: process.env.CLAUDE_PATH, source: "env override" });
   }
 
   // try node_modules/.bin/claude
   const localBinPath = path.join(launcherRoot, "node_modules/.bin/claude");
   if (fs.existsSync(localBinPath)) {
-    return { path: fs.realpathSync(localBinPath), source: "local bin" };
+    return maybeResolveNative({ path: fs.realpathSync(localBinPath), source: "local bin" });
   }
 
   // try resolving the package
@@ -70,6 +101,15 @@ const resolveClaudeCli = async (launcherRoot: string): Promise<ResolveResult> =>
       paths: [launcherRoot],
     });
     const claudeDir = path.dirname(claudePkgPath);
+    const native = resolveCliForLaunch(claudeDir);
+    if (native) {
+      return {
+        path: native.path,
+        source: `local package (native ${native.cacheHit ? "cache" : "extracted"})`,
+        native: true,
+        wrapperDir: native.info?.wrapperDir ?? claudeDir,
+      };
+    }
     const claudePkg = JSON.parse(fs.readFileSync(claudePkgPath, "utf8"));
     const mainEntry = claudePkg.bin?.["claude"] || claudePkg.main || "cli.js";
     const claudeModulePath = path.join(claudeDir, mainEntry);
@@ -82,7 +122,7 @@ const resolveClaudeCli = async (launcherRoot: string): Promise<ResolveResult> =>
   // fallback to global claude
   try {
     const claudeBinPath = await which("claude");
-    return { path: fs.realpathSync(claudeBinPath), source: "global bin" };
+    return maybeResolveNative({ path: fs.realpathSync(claudeBinPath), source: "global bin" });
   } catch {
     throw new Error("Could not find Claude Code neither in node_modules nor globally.");
   }
@@ -461,6 +501,22 @@ const run = async () => {
     const resolved = await resolveClaudeCli(context.launcherDirectory);
     claudeModulePath = resolved.path;
     log.info("LAUNCHER", `Found Claude CLI: ${claudeModulePath}`);
+    if (resolved.native) {
+      if (process.env.USE_BUILTIN_RIPGREP === undefined) {
+        process.env.USE_BUILTIN_RIPGREP = "0";
+        log.debug("LAUNCHER", "Native mode: set USE_BUILTIN_RIPGREP=0 (using system ripgrep)");
+      }
+      // anchor the cached bundle's createRequire() on the wrapper's package.json so
+      // its Node fallback paths (require("yaml"), require("undici"), ...) resolve
+      // against the launcher's node_modules instead of the cache dir.
+      if (resolved.wrapperDir) {
+        process.env.CCC_CLAUDE_WRAPPER_PKG_JSON = path.join(resolved.wrapperDir, "package.json");
+        log.debug(
+          "LAUNCHER",
+          `Native mode: CCC_CLAUDE_WRAPPER_PKG_JSON=${process.env.CCC_CLAUDE_WRAPPER_PKG_JSON}`,
+        );
+      }
+    }
     resolveTask.done(resolved.source);
   } catch (error) {
     resolveTask.fail("Claude CLI not found");

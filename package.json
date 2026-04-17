@@ -27,8 +27,9 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@anthropic-ai/claude-code": "^2.1.112",
+    "@anthropic-ai/claude-code": "^2.1.113",
     "dotenv": "^17.3.1",
+    "esbuild": "^0.28.0",
     "eventsource": "^4.1.0",
     "fast-glob": "^3.3.3",
     "fastmcp": "^3.34.0",

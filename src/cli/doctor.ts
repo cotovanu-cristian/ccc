@@ -113,10 +113,12 @@ const collectLayeredItems = async (context: Context, kind: "agents" | "commands"
   const globalDir = join(launcherRoot, context.configDirectory, "global", kind);
   const globalNames = listItemNames(globalDir);
 
-  const presetEntries = context.project.presets.map((preset) => ({
-    name: preset.name,
-    dir: join(launcherRoot, context.configDirectory, "presets", preset.name, kind),
-  }));
+  const presetEntries = context.project.presets.map((preset) => {
+    return {
+      name: preset.name,
+      dir: join(launcherRoot, context.configDirectory, "presets", preset.name, kind),
+    };
+  });
   const presetNameMap = new Map<string, string[]>();
   for (const entry of presetEntries) presetNameMap.set(entry.name, listItemNames(entry.dir));
 
@@ -256,7 +258,7 @@ const collectLayeredProfiles = async (context: Context): Promise<ItemTraces> => 
   const items: ItemTraces = {};
   const settingsLayers = await loadConfigFromLayers<Record<string, unknown>>(context, "settings.ts");
 
-  const extractNames = (layer: Record<string, unknown> | undefined): string[] => {
+  const extractNames = (layer: Record<string, unknown> | undefined) => {
     if (!layer || typeof layer.profiles !== "object" || !layer.profiles) return [];
     return Object.keys(layer.profiles as Record<string, unknown>);
   };
@@ -292,10 +294,12 @@ const collectLayeredSkills = async (context: Context): Promise<ItemTraces> => {
   const globalDir = join(configBase, "global", "skills");
   const globalNames = listSkillNames(globalDir);
 
-  const presetEntries = context.project.presets.map((preset) => ({
-    name: preset.name,
-    dir: join(configBase, "presets", preset.name, "skills"),
-  }));
+  const presetEntries = context.project.presets.map((preset) => {
+    return {
+      name: preset.name,
+      dir: join(configBase, "presets", preset.name, "skills"),
+    };
+  });
   const presetNameMap = new Map<string, string[]>();
   for (const entry of presetEntries) presetNameMap.set(entry.name, listSkillNames(entry.dir));
 
@@ -355,10 +359,12 @@ const collectLayeredRules = async (context: Context): Promise<ItemTraces> => {
   const globalDir = join(configBase, "global", "rules");
   const globalNames = listRuleNames(globalDir);
 
-  const presetEntries = context.project.presets.map((preset) => ({
-    name: preset.name,
-    dir: join(configBase, "presets", preset.name, "rules"),
-  }));
+  const presetEntries = context.project.presets.map((preset) => {
+    return {
+      name: preset.name,
+      dir: join(configBase, "presets", preset.name, "rules"),
+    };
+  });
   const presetNameMap = new Map<string, string[]>();
   for (const entry of presetEntries) presetNameMap.set(entry.name, listRuleNames(entry.dir));
 
@@ -568,10 +574,12 @@ const printPretty = (report: DoctorReport) => {
     p.dim.log("(none)");
   } else {
     p(
-      marketplaceNames.map((name) => ({
-        name,
-        trace: fmtTrace(report.plugins.claude.marketplaces[name] || []),
-      })),
+      marketplaceNames.map((name) => {
+        return {
+          name,
+          trace: fmtTrace(report.plugins.claude.marketplaces[name] || []),
+        };
+      }),
     );
   }
 

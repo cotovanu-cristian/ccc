@@ -22,45 +22,53 @@ const baseInput = {
   permission_mode: "default" as const,
 };
 
-const createPreToolUseInput = (overrides: Partial<PreToolUseHookInput> = {}): PreToolUseHookInput => ({
-  ...baseInput,
-  hook_event_name: "PreToolUse",
-  tool_name: "Bash",
-  tool_input: { command: "pwd" },
-  tool_use_id: "tool-1",
-  ...overrides,
-});
+const createPreToolUseInput = (overrides: Partial<PreToolUseHookInput> = {}): PreToolUseHookInput => {
+  return ({
+    ...baseInput,
+    hook_event_name: "PreToolUse",
+    tool_name: "Bash",
+    tool_input: { command: "pwd" },
+    tool_use_id: "tool-1",
+    ...overrides,
+  })
+};
 
 const createSessionStartInput = (
   overrides: Partial<SessionStartHookInput> = {},
-): SessionStartHookInput => ({
-  ...baseInput,
-  hook_event_name: "SessionStart",
-  source: "startup",
-  ...overrides,
-});
+): SessionStartHookInput => {
+  return ({
+    ...baseInput,
+    hook_event_name: "SessionStart",
+    source: "startup",
+    ...overrides,
+  })
+};
 
 const createSubagentStartInput = (
   overrides: Partial<SubagentStartHookInput> = {},
-): SubagentStartHookInput => ({
-  ...baseInput,
-  hook_event_name: "SubagentStart",
-  agent_id: "agent-1",
-  agent_type: "general-purpose",
-  ...overrides,
-});
+): SubagentStartHookInput => {
+  return ({
+    ...baseInput,
+    hook_event_name: "SubagentStart",
+    agent_id: "agent-1",
+    agent_type: "general-purpose",
+    ...overrides,
+  })
+};
 
 const createSubagentStopInput = (
   overrides: Partial<SubagentStopHookInput> = {},
-): SubagentStopHookInput => ({
-  ...baseInput,
-  hook_event_name: "SubagentStop",
-  stop_hook_active: false,
-  agent_id: "agent-1",
-  agent_transcript_path: "/tmp/agent-transcript.jsonl",
-  agent_type: "general-purpose",
-  ...overrides,
-});
+): SubagentStopHookInput => {
+  return ({
+    ...baseInput,
+    hook_event_name: "SubagentStop",
+    stop_hook_active: false,
+    agent_id: "agent-1",
+    agent_transcript_path: "/tmp/agent-transcript.jsonl",
+    agent_type: "general-purpose",
+    ...overrides,
+  })
+};
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

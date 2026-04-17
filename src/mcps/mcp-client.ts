@@ -56,10 +56,11 @@ const isConnectionError = (error: Error) => {
   return connectionErrors.some((e) => error.message.includes(e));
 };
 
-const sleep = (ms: number) =>
-  new Promise((resolve) => {
+const sleep = (ms: number) => {
+  return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+};
 
 export class MCPClient {
   private requestId = 0;
