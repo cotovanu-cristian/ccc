@@ -14,7 +14,7 @@
         "json-schema": "^0.4.0",
         "memfs": "^4.56.11",
         "picocolors": "^1.1.1",
-        "picoprint": "^1.0.6",
+        "picoprint": "^2.0.0",
         "unionfs": "^4.6.0",
         "zod": "^4.3.6",
         "zx": "^8.8.5",
@@ -471,7 +471,7 @@
 
     "picomatch": ["picomatch@4.0.3", "", {}, "sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q=="],
 
-    "picoprint": ["picoprint@1.0.6", "", {}, "sha512-ooj2bqtFtvNNUdQZsAY9DQLzw66Stpn2syFe0AyZ8ds6TDLCc4WMheN/4YeoFCGMNYDyoKgmQ6ipXCzBxs/74w=="],
+    "picoprint": ["picoprint@2.0.0", "", {}, "sha512-GIzAlC6QWUul1zWC/Ilu8Is7Uj2vNMrDJeajEu1CEo4WeHcEOSglmyhMd/ZFYMZQLZP/a3+c/PIyNhU52Lx1Qg=="],
 
     "pipenet": ["pipenet@1.4.0", "", { "dependencies": { "axios": "^1.7.3", "debug": "^4.3.6", "human-readable-ids": "^1.0.4", "koa": "^3.1.1", "koa-router": "^14.0.0", "pump": "^3.0.3", "tldjs": "^2.3.2", "yargs": "^18.0.0" }, "bin": { "pipenet": "dist/cli.js" } }, "sha512-Uc3EH2i8hnJUD0Eupj9z2jaZPjjAbooaiHGh0iFdExbE8/BDt6Lf0919Dtwx5VM83elHNWFzCOsvzsViTD5YZg=="],
 

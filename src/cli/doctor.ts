@@ -466,58 +466,58 @@ const printPretty = (report: DoctorReport) => {
   };
 
   // header
-  p.bold.blue.log("\nGeneral:");
+  p.color.bold.blue.log("\nGeneral:");
   p({
     "working dir": report.meta.workingDirectory,
     "config dir": report.meta.configDirectory,
   });
 
   // project
-  p.bold.blue.log("\nProject:");
+  p.color.bold.blue.log("\nProject:");
   p({
     presets: report.presets.length > 0 ? report.presets : "(none)",
     project: report.project ?? "(none)",
   });
 
   // prompts
-  p.bold.blue.log("\nPrompts:");
+  p.color.bold.blue.log("\nPrompts:");
   p({
     system: fmtTrace(report.prompts.system),
     user: fmtTrace(report.prompts.user),
   });
 
   // commands
-  p.bold.blue.log("\nCommands:");
+  p.color.bold.blue.log("\nCommands:");
   const commandNames = Object.keys(report.commands).sort();
   if (commandNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(commandNames.map((name) => ({ name, trace: fmtTrace(report.commands[name] || []) })));
   }
 
   // agents
-  p.bold.blue.log("\nAgents:");
+  p.color.bold.blue.log("\nAgents:");
   const agentNames = Object.keys(report.agents).sort();
   if (agentNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(agentNames.map((name) => ({ name, trace: fmtTrace(report.agents[name] || []) })));
   }
 
   // rules
-  p.bold.blue.log("\nRules:");
+  p.color.bold.blue.log("\nRules:");
   const ruleNames = Object.keys(report.rules).sort();
   if (ruleNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(ruleNames.map((name) => ({ name, trace: fmtTrace(report.rules[name] || []) })));
   }
 
   // MCPs
-  p.bold.blue.log("\nMCPs:");
+  p.color.bold.blue.log("\nMCPs:");
   const mcpNames = Object.keys(report.mcps).sort();
   if (mcpNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(
       mcpNames.map((name) => {
@@ -532,35 +532,35 @@ const printPretty = (report: DoctorReport) => {
   }
 
   // hooks
-  p.bold.blue.log("\nHooks:");
+  p.color.bold.blue.log("\nHooks:");
   const hookNames = Object.keys(report.hooks).sort();
   if (hookNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(hookNames.map((name) => ({ name, trace: fmtTrace(report.hooks[name] || []) })));
   }
 
   // plugins
-  p.bold.blue.log("\nPlugins:");
-  p.bold.blue.log("CCC Plugins:");
+  p.color.bold.blue.log("\nPlugins:");
+  p.color.bold.blue.log("CCC Plugins:");
   const cccNames = Object.keys(report.plugins.ccc).sort();
   if (cccNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(cccNames.map((name) => ({ name, trace: fmtTrace(report.plugins.ccc[name] || []) })));
   }
 
-  p.bold.blue.log("Claude Plugins (enabledPlugins):");
+  p.color.bold.blue.log("Claude Plugins (enabledPlugins):");
   const enabledNames = Object.keys(report.plugins.claude.enabled).sort();
   if (enabledNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(enabledNames.map((name) => ({ name, trace: fmtTrace(report.plugins.claude.enabled[name] || []) })));
   }
 
-  p.bold.blue.log("Claude Plugins (pluginDirs):");
+  p.color.bold.blue.log("Claude Plugins (pluginDirs):");
   if (report.plugins.claude.pluginDirs.dirs.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p({
       dirs: report.plugins.claude.pluginDirs.dirs,
@@ -568,10 +568,10 @@ const printPretty = (report: DoctorReport) => {
     });
   }
 
-  p.bold.blue.log("Claude Plugins (marketplaces):");
+  p.color.bold.blue.log("Claude Plugins (marketplaces):");
   const marketplaceNames = Object.keys(report.plugins.claude.marketplaces).sort();
   if (marketplaceNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(
       marketplaceNames.map((name) => {
@@ -584,19 +584,19 @@ const printPretty = (report: DoctorReport) => {
   }
 
   // skills
-  p.bold.blue.log("\nSkills:");
+  p.color.bold.blue.log("\nSkills:");
   const skillNames = Object.keys(report.skills).sort();
   if (skillNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(skillNames.map((name) => ({ name, trace: fmtTrace(report.skills[name] || []) })));
   }
 
   // profiles
-  p.bold.blue.log("\nProfiles:");
+  p.color.bold.blue.log("\nProfiles:");
   const profileNames = Object.keys(report.profiles).sort();
   if (profileNames.length === 0) {
-    p.dim.log("(none)");
+    p.color.dim.log("(none)");
   } else {
     p(profileNames.map((name) => ({ name, trace: fmtTrace(report.profiles[name] || []) })));
   }

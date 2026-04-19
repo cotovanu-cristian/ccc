@@ -5,8 +5,8 @@ import p from "picoprint";
 // postinstall is kept for future non-cli patches if needed
 
 const run = () => {
-  p.dim.log("⚙", "postinstall");
-  p.dim.log("·", "cli patches: applied at runtime");
+  p.color.dim.log("⚙", "postinstall");
+  p.color.dim.log("·", "cli patches: applied at runtime");
 };
 
 run();
