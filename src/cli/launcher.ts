@@ -922,19 +922,23 @@ const run = async () => {
   const osModule = await import("os");
   const cryptoModule = await import("crypto");
 
+  const patchTask = startup.start("Apply runtime patches");
   let content = fs.readFileSync(claudeModulePath, "utf8");
   const allApplied: string[] = [];
+  const allMissed: string[] = [];
 
   // apply built-in patches (lsp fixes, feature disabling)
   const builtIn = applyBuiltInPatches(content);
   content = builtIn.content;
   allApplied.push(...builtIn.applied);
+  allMissed.push(...builtIn.missed);
 
   // apply user-defined patches from settings
   if (patches && patches.length > 0) {
     const user = applyUserPatches(content, patches);
     content = user.content;
     allApplied.push(...user.applied);
+    allMissed.push(...user.missed);
   }
 
   if (allApplied.length > 0) {
@@ -944,10 +948,24 @@ const run = async () => {
     const patchedPath = path.join(patchTmpDir, `claude-cli-patched-${hash}.mjs`);
     fs.writeFileSync(patchedPath, content);
     importPath = patchedPath;
-    log.info("LAUNCHER", `Applied ${allApplied.length} runtime patches`);
-    for (const patchName of allApplied) {
-      log.debug("LAUNCHER", `  - ${patchName}`);
+    log.info("LAUNCHER", `Applied ${allApplied.length}/${allApplied.length + allMissed.length} runtime patches`);
+    for (const patchName of allApplied) log.debug("LAUNCHER", `  + ${patchName}`);
+  }
+
+  const total = allApplied.length + allMissed.length;
+  if (total === 0) {
+    patchTask.skip("none configured");
+  } else if (allMissed.length === 0) {
+    patchTask.done(`${allApplied.length}/${total}`);
+  } else {
+    patchTask.done(`${allApplied.length}/${total}, ${allMissed.length} stale`);
+    if (startupMessagesEnabled) {
+      for (const patchName of allMissed) {
+        process.stdout.write(`  ${p.yellow("!")} ${p.dim("stale:")} ${patchName}\n`);
+      }
     }
+    log.warn("LAUNCHER", `${allMissed.length} stale patches against CLI:`);
+    for (const patchName of allMissed) log.warn("LAUNCHER", `  - ${patchName}`);
   }
 
   const launchTask = startup.start("Launching Claude...");

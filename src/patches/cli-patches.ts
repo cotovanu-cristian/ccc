@@ -7,28 +7,27 @@ export type RuntimePatch = { find: string; replace: string } | { fn: PatchFn; na
 // built-in string replacements
 const builtInStringPatches: RuntimePatch[] = [
   // disable unwanted features
-  { find: "pr-comments", replace: "zprcomments" },
   { find: "security-review", replace: "zsecurityreview" },
 ];
 
+const labelFor = (patch: RuntimePatch) =>
+  "fn" in patch ? patch.name : `"${patch.find}" => "${patch.replace}"`;
+
 const applyOne = (content: string, patch: RuntimePatch) => {
-  if ("fn" in patch) {
-    const result = patch.fn(content);
-    return { content: result, label: result !== content ? patch.name : null };
-  }
-  const result = content.replaceAll(patch.find, patch.replace);
-  return { content: result, label: result !== content ? `"${patch.find}" => "${patch.replace}"` : null };
+  const result = "fn" in patch ? patch.fn(content) : content.replaceAll(patch.find, patch.replace);
+  return { content: result, matched: result !== content };
 };
 
 const applyAll = (content: string, patches: RuntimePatch[]) => {
   const applied: string[] = [];
+  const missed: string[] = [];
   let result = content;
   for (const patch of patches) {
-    const { content: next, label } = applyOne(result, patch);
+    const { content: next, matched } = applyOne(result, patch);
     result = next;
-    if (label) applied.push(label);
+    (matched ? applied : missed).push(labelFor(patch));
   }
-  return { content: result, applied };
+  return { content: result, applied, missed };
 };
 
 // apply all built-in patches to CLI content
