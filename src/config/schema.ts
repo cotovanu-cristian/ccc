@@ -455,6 +455,10 @@ const baseSettingsSchema = z.object({
     .optional(),
   // name of a built-in or custom agent for the main thread (v2.1.85)
   agent: z.string().optional(),
+  // opt-in for WSL to inherit managed settings from Windows policy chain
+  // (HKLM + C:/Program Files/ClaudeCode via DrvFs + HKCU); requires double
+  // opt-in (admin + user) and has no effect on native Windows (v2.1.118)
+  wslInheritsWindowsSettings: z.boolean().optional(),
 
   permissions: z
     .object({

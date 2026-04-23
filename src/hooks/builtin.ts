@@ -75,6 +75,13 @@ const builtins: BuiltinCommands = {
     batchable: true,
     handler: eventRecorder.record,
   }),
+  PostToolBatch: createHook({
+    event: "PostToolBatch",
+    id: "builtin-recorder",
+    source: "builtin",
+    batchable: true,
+    handler: eventRecorder.record,
+  }),
   PostToolUse: createHook({
     event: "PostToolUse",
     id: "builtin-recorder",
@@ -168,6 +175,13 @@ const builtins: BuiltinCommands = {
   }),
   TeammateIdle: createHook({
     event: "TeammateIdle",
+    id: "builtin-recorder",
+    source: "builtin",
+    batchable: true,
+    handler: eventRecorder.record,
+  }),
+  UserPromptExpansion: createHook({
+    event: "UserPromptExpansion",
     id: "builtin-recorder",
     source: "builtin",
     batchable: true,

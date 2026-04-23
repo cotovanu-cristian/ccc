@@ -9,6 +9,7 @@ export type HookEventName =
   | "PermissionDenied"
   | "PermissionRequest"
   | "PostCompact"
+  | "PostToolBatch"
   | "PostToolUse"
   | "PostToolUseFailure"
   | "PreCompact"
@@ -23,6 +24,7 @@ export type HookEventName =
   | "TaskCompleted"
   | "TaskCreated"
   | "TeammateIdle"
+  | "UserPromptExpansion"
   | "UserPromptSubmit"
   | "WorktreeCreate"
   | "WorktreeRemove";
@@ -81,7 +83,9 @@ export interface HookCommand {
   timeout?: number;
   once?: boolean;
   // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)" (v2.1.85)
-  // only evaluated for PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest
+  // only evaluated for PreToolUse, PostToolUse, PostToolUseFailure,
+  // PermissionRequest, PermissionDenied; ignored (and hook skipped with a warning)
+  // for other events including PostToolBatch and UserPromptExpansion
   if?: string;
   // custom spinner status message while hook runs (v2.1.63)
   statusMessage?: string;
@@ -134,7 +138,25 @@ export interface HookAgent {
   statusMessage?: string;
 }
 
-export type HookEntry = HookAgent | HookCommand | HookHttp | HookPrompt;
+// mcp tool hook: invoke a tool on a configured MCP server (v2.1.118)
+export interface HookMcpTool {
+  type: "mcp_tool";
+  // name of an already-configured MCP server to invoke
+  server: string;
+  // name of the tool on that server to call
+  tool: string;
+  // arguments passed to the MCP tool; string values support ${path} interpolation
+  // from the hook input JSON (e.g. "${tool_input.file_path}")
+  input?: Record<string, unknown>;
+  timeout?: number;
+  once?: boolean;
+  // permission rule syntax to filter when this hook runs, e.g. "Bash(git *)"
+  if?: string;
+  // custom spinner status message while hook runs
+  statusMessage?: string;
+}
+
+export type HookEntry = HookAgent | HookCommand | HookHttp | HookMcpTool | HookPrompt;
 
 export interface HookDefinition {
   matcher?: HookMatcherType;
@@ -173,6 +195,22 @@ export interface PostToolUseHookInput extends BaseHookInput {
   tool_use_id: string;
 }
 
+export interface PostToolBatchToolCall {
+  tool_name: string;
+  // CLI types this as `unknown`; narrowed here since tool inputs are always objects
+  tool_input: Record<string, unknown>;
+  tool_use_id: string;
+  tool_response?: unknown;
+}
+
+// fires once after every tool call in a batch has resolved, before the next model
+// request; PostToolUse fires per-tool (possibly concurrently), PostToolBatch fires
+// once with the full batch (v2.1.118)
+export interface PostToolBatchHookInput extends BaseHookInput {
+  hook_event_name: "PostToolBatch";
+  tool_calls: PostToolBatchToolCall[];
+}
+
 // fires after auto mode classifier denies a tool call; output can request retry (v2.1.89)
 export interface PermissionDeniedHookInput extends BaseHookInput {
   hook_event_name: "PermissionDenied";
@@ -194,6 +232,17 @@ export interface UserPromptSubmitHookInput extends BaseHookInput {
   hook_event_name: "UserPromptSubmit";
   prompt: string;
   session_title?: string;
+}
+
+// fires when a slash command or mcp prompt expands a user prompt, before the
+// expanded prompt is submitted (v2.1.116)
+export interface UserPromptExpansionHookInput extends BaseHookInput {
+  hook_event_name: "UserPromptExpansion";
+  expansion_type: "mcp_prompt" | "slash_command";
+  command_name: string;
+  command_args: string;
+  command_source?: string;
+  prompt: string;
 }
 
 export interface SessionStartHookInput extends BaseHookInput {
@@ -401,6 +450,7 @@ export type ClaudeHookInput =
   | PermissionDeniedHookInput
   | PermissionRequestHookInput
   | PostCompactHookInput
+  | PostToolBatchHookInput
   | PostToolUseFailureHookInput
   | PostToolUseHookInput
   | PreCompactHookInput
@@ -415,6 +465,7 @@ export type ClaudeHookInput =
   | TaskCompletedHookInput
   | TaskCreatedHookInput
   | TeammateIdleHookInput
+  | UserPromptExpansionHookInput
   | UserPromptSubmitHookInput
   | WorktreeCreateHookInput
   | WorktreeRemoveHookInput;
@@ -452,6 +503,13 @@ export interface PostToolUseHookResponse extends BaseHookResponse {
   };
 }
 
+export interface PostToolBatchHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "PostToolBatch";
+    additionalContext?: string;
+  };
+}
+
 // fire-and-forget — output can request retry via {retry: true} (v2.1.89)
 export interface PermissionDeniedHookResponse extends BaseHookResponse {
   hookSpecificOutput?: {
@@ -486,6 +544,13 @@ export interface UserPromptSubmitHookResponse extends BaseHookResponse {
     additionalContext?: string;
     // set the session title, same effect as /rename (v2.1.94)
     sessionTitle?: string;
+  };
+}
+
+export interface UserPromptExpansionHookResponse extends BaseHookResponse {
+  hookSpecificOutput?: {
+    hookEventName: "UserPromptExpansion";
+    additionalContext?: string;
   };
 }
 
@@ -614,6 +679,7 @@ export type HookResponse =
   | PermissionDeniedHookResponse
   | PermissionRequestHookResponse
   | PostCompactHookResponse
+  | PostToolBatchHookResponse
   | PostToolUseFailureHookResponse
   | PostToolUseHookResponse
   | PreCompactHookResponse
@@ -628,6 +694,7 @@ export type HookResponse =
   | TaskCompletedHookResponse
   | TaskCreatedHookResponse
   | TeammateIdleHookResponse
+  | UserPromptExpansionHookResponse
   | UserPromptSubmitHookResponse
   | WorktreeCreateHookResponse
   | WorktreeRemoveHookResponse;
@@ -672,6 +739,10 @@ export interface HookEventMap {
   PostCompact: {
     input: PostCompactHookInput;
     response: PostCompactHookResponse | void;
+  };
+  PostToolBatch: {
+    input: PostToolBatchHookInput;
+    response: PostToolBatchHookResponse | void;
   };
   PostToolUse: {
     input: PostToolUseHookInput;
@@ -728,6 +799,10 @@ export interface HookEventMap {
   TeammateIdle: {
     input: TeammateIdleHookInput;
     response: TeammateIdleHookResponse | void;
+  };
+  UserPromptExpansion: {
+    input: UserPromptExpansionHookInput;
+    response: UserPromptExpansionHookResponse | void;
   };
   UserPromptSubmit: {
     input: UserPromptSubmitHookInput;
