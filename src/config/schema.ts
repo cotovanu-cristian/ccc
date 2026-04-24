@@ -548,10 +548,32 @@ const baseSettingsSchema = z.object({
   // hooks are overwritten by launcher
   // hooks: z.record(z.string(), z.array(z.any())).optional(),
 
-  // config options
-  // preferredNotifChannel: z.string().optional(),
-  // theme: z.string().optional(),
-  // verbose: z.boolean().optional(),
+  // URL template for PR links in the footer badge and inline messages.
+  // placeholders: {host} {owner} {repo} {number} {url} (v2.1.119)
+  prUrlTemplate: z.string().optional(), // default: unset (falls back to github.com)
+
+  // /config settings that persist to settings.json and participate in
+  // project/local/policy override precedence (v2.1.119)
+  theme: z
+    .enum(["auto", "dark", "light", "light-daltonized", "dark-daltonized", "light-ansi", "dark-ansi"])
+    .optional(), // default: "dark"
+  editorMode: z.enum(["normal", "vim"]).optional(), // default: "normal"
+  verbose: z.boolean().optional(), // default: false
+  preferredNotifChannel: z
+    .enum(["auto", "iterm2", "iterm2_with_bell", "terminal_bell", "kitty", "ghostty", "notifications_disabled"])
+    .optional(), // default: "auto"
+  autoCompactEnabled: z.boolean().optional(), // default: true
+  autoScrollEnabled: z.boolean().optional(), // default: true
+  fileCheckpointingEnabled: z.boolean().optional(), // default: true
+  showTurnDuration: z.boolean().optional(), // default: true
+  showMessageTimestamps: z.boolean().optional(), // default: false
+  terminalProgressBarEnabled: z.boolean().optional(), // default: true
+  todoFeatureEnabled: z.boolean().optional(), // default: true
+  teammateMode: z.enum(["auto", "tmux", "in-process"]).optional(), // default: "auto"
+  remoteControlAtStartup: z.boolean().optional(), // default: unset (tristate; undefined = "default")
+  autoUploadSessions: z.boolean().optional(), // default: unset (server-controlled)
+  inputNeededNotifEnabled: z.boolean().optional(), // default: unset (server-controlled)
+  agentPushNotifEnabled: z.boolean().optional(), // default: false
 });
 
 // named configuration profiles applied via --profile <name> (CCC-only, stripped before settings.json)

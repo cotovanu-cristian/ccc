@@ -193,6 +193,8 @@ export interface PostToolUseHookInput extends BaseHookInput {
   tool_input: Record<string, unknown>;
   tool_response: unknown;
   tool_use_id: string;
+  // tool execution time in ms, excluding permission prompts and PreToolUse hooks (v2.1.119)
+  duration_ms?: number;
 }
 
 export interface PostToolBatchToolCall {
@@ -437,6 +439,8 @@ export interface PostToolUseFailureHookInput extends BaseHookInput {
   tool_use_id: string;
   error: string;
   is_interrupt?: boolean;
+  // tool execution time in ms, excluding permission prompts and PreToolUse hooks (v2.1.119)
+  duration_ms?: number;
 }
 
 export type ClaudeHookInput =
