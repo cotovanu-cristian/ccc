@@ -555,6 +555,10 @@ const baseSettingsSchema = z.object({
   // placeholders: {host} {owner} {repo} {number} {url} (v2.1.119)
   prUrlTemplate: z.string().optional(), // default: unset (falls back to github.com)
 
+  // background daemon cold-start behavior: 'transient' spawns one for this login session;
+  // 'ask' offers to install a persistent service (v2.1.120)
+  daemonColdStart: z.enum(["transient", "ask"]).optional(),
+
   // /config settings that persist to settings.json and participate in
   // project/local/policy override precedence (v2.1.119)
   theme: z
