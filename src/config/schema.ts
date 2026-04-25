@@ -545,6 +545,9 @@ const baseSettingsSchema = z.object({
   // runtime patches applied to claude cli
   patches: z.array(runtimePatchSchema).optional(),
 
+  // GrowthBook feature flag overrides
+  featureFlags: z.record(z.string(), z.unknown()).optional(),
+
   // hooks are overwritten by launcher
   // hooks: z.record(z.string(), z.array(z.any())).optional(),
 
@@ -560,7 +563,15 @@ const baseSettingsSchema = z.object({
   editorMode: z.enum(["normal", "vim"]).optional(), // default: "normal"
   verbose: z.boolean().optional(), // default: false
   preferredNotifChannel: z
-    .enum(["auto", "iterm2", "iterm2_with_bell", "terminal_bell", "kitty", "ghostty", "notifications_disabled"])
+    .enum([
+      "auto",
+      "iterm2",
+      "iterm2_with_bell",
+      "terminal_bell",
+      "kitty",
+      "ghostty",
+      "notifications_disabled",
+    ])
     .optional(), // default: "auto"
   autoCompactEnabled: z.boolean().optional(), // default: true
   autoScrollEnabled: z.boolean().optional(), // default: true

@@ -1868,6 +1868,7 @@ export const setupVirtualFileSystem = (args: {
     cli: _cli,
     patches: _patches,
     profiles: _profiles,
+    featureFlags: rawFeatureFlags,
     _profileName,
     _availableProfiles,
     ...filteredSettings
@@ -1877,6 +1878,31 @@ export const setupVirtualFileSystem = (args: {
   void _profiles; // eslint: intentionally excluded from settings.json
   void _profileName; // eslint: diagnostic-only field
   void _availableProfiles; // eslint: diagnostic-only field
+
+  // merge featureFlags into ~/.claude.json's cachedGrowthBookFeatures
+  const featureFlags =
+    rawFeatureFlags && typeof rawFeatureFlags === "object" && !Array.isArray(rawFeatureFlags)
+      ? (rawFeatureFlags as Record<string, unknown>)
+      : undefined;
+  let effectiveClaudeStateJson = args.claudeStateJson;
+  if (featureFlags && Object.keys(featureFlags).length > 0) {
+    log.vfs(`Injecting featureFlags into cachedGrowthBookFeatures: ${Object.keys(featureFlags).join(", ")}`);
+    try {
+      const parsed = effectiveClaudeStateJson ? JSON.parse(effectiveClaudeStateJson) : {};
+      const base = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+      const existing =
+        base.cachedGrowthBookFeatures && typeof base.cachedGrowthBookFeatures === "object"
+          ? base.cachedGrowthBookFeatures
+          : {};
+      const merged = {
+        ...base,
+        cachedGrowthBookFeatures: { ...existing, ...featureFlags },
+      };
+      effectiveClaudeStateJson = `${JSON.stringify(merged, null, 2)}\n`;
+    } catch (error) {
+      log.vfs(`Failed to merge featureFlags into .claude.json: ${error instanceof Error ? error.message : error}`);
+    }
+  }
   if (filteredSettings.env && typeof filteredSettings.env === "object") {
     const envRecord = filteredSettings.env as Record<string, string>;
     const filteredEnv: Record<string, string> = {};
@@ -1891,7 +1917,7 @@ export const setupVirtualFileSystem = (args: {
   }
 
   const vol = Volume.fromJSON({
-    ...(args.claudeStateJson !== undefined && { [claudeStatePath]: args.claudeStateJson }),
+    ...(effectiveClaudeStateJson !== undefined && { [claudeStatePath]: effectiveClaudeStateJson }),
     [settingsJsonPath]: JSON.stringify(filteredSettings, null, 2),
     [claudeMdPath]: args.userPrompt,
   });

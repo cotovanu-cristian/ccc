@@ -527,6 +527,18 @@ const run = async () => {
   // extract runtime patches from settings
   const patches = (settings as { patches?: RuntimePatch[] }).patches;
 
+  // expose featureFlags overrides to the patched growthbook flag reader
+  const featureFlags = (settings as { featureFlags?: Record<string, unknown> }).featureFlags;
+  if (featureFlags && Object.keys(featureFlags).length > 0) {
+    (globalThis as { __cccFeatureFlags?: Record<string, unknown> }).__cccFeatureFlags = featureFlags;
+    log.info("LAUNCHER", `Exposed __cccFeatureFlags: ${Object.keys(featureFlags).join(", ")}`);
+    if (process.env.CCC_DEBUG_FEATURE_FLAGS) {
+      process.stderr.write(`[ccc] __cccFeatureFlags set: ${JSON.stringify(featureFlags)}\n`);
+    }
+  } else if (process.env.CCC_DEBUG_FEATURE_FLAGS) {
+    process.stderr.write(`[ccc] __cccFeatureFlags NOT set (featureFlags=${JSON.stringify(featureFlags)})\n`);
+  }
+
   // setup vfs
   await startup.run("Mount VFS", async () => {
     setupVirtualFileSystem({
@@ -948,7 +960,10 @@ const run = async () => {
     const patchedPath = path.join(patchTmpDir, `claude-cli-patched-${hash}.mjs`);
     fs.writeFileSync(patchedPath, content);
     importPath = patchedPath;
-    log.info("LAUNCHER", `Applied ${allApplied.length}/${allApplied.length + allMissed.length} runtime patches`);
+    log.info(
+      "LAUNCHER",
+      `Applied ${allApplied.length}/${allApplied.length + allMissed.length} runtime patches`,
+    );
     for (const patchName of allApplied) log.debug("LAUNCHER", `  + ${patchName}`);
   }
 

@@ -9,7 +9,7 @@ describe("applyBuiltInPatches", () => {
     expect(next.content).toContain("zsecurityreview");
     expect(next.content).toContain("keep-me");
     expect(next.applied).toEqual(['"security-review" => "zsecurityreview"']);
-    expect(next.missed).toEqual([]);
+    expect(next.missed).toEqual(["growthbook-sync-flag-override", "disable-find-grep-shadow"]);
   });
 
   test("reports misses when built-in replacements do not match", () => {
@@ -18,7 +18,11 @@ describe("applyBuiltInPatches", () => {
 
     expect(next.content).toBe(content);
     expect(next.applied).toEqual([]);
-    expect(next.missed).toEqual(['"security-review" => "zsecurityreview"']);
+    expect(next.missed).toEqual([
+      '"security-review" => "zsecurityreview"',
+      "growthbook-sync-flag-override",
+      "disable-find-grep-shadow",
+    ]);
   });
 });
 
